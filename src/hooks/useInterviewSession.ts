@@ -8,7 +8,7 @@ import {
 	scoreInterviewAnswer,
 } from "@/lib/interview-core";
 import { parseResumeFile } from "@/lib/resume-file";
-import { loadSharedContext, saveInterviewRecord } from "@/lib/storage";
+import { loadSharedContext, saveInterviewRecord, loadNextActions, clearNextActions } from "@/lib/storage";
 import { fetchWithAiHeaders } from "@/lib/fetch-ai";
 import type { InterviewerRole } from "@/data/interviewer-roles";
 
@@ -39,6 +39,7 @@ export type ReviewResponse = {
 	strengths?: string[];
 	weaknesses?: string[];
 	nextSteps?: string[];
+	learningPaths?: string[];
 	interviewReadiness?: string;
 	error?: string;
 };
@@ -129,6 +130,7 @@ export function useInterviewSession() {
 	const [fileStatus, setFileStatus] = useState(emptyResumeHint);
 	const [isParsingFile, setIsParsingFile] = useState(false);
 	const [isPreparing, setIsPreparing] = useState(false);
+	const [focusContext, setFocusContext] = useState("");
 
 	useEffect(() => {
 		const ctx = loadSharedContext();
@@ -139,6 +141,12 @@ export function useInterviewSession() {
 		if (ctx.position) {
 			setPosition(ctx.position);
 		}
+		const actions = loadNextActions();
+		const focus = actions.find((a) => a.type === "interview-focus");
+		if (focus?.context) {
+			setFocusContext(focus.context);
+		}
+		clearNextActions();
 	}, []);
 	const [planSummary, setPlanSummary] = useState("尚未基于简历生成面试计划。 ");
 	const [topics, setTopics] = useState<InterviewTopic[]>([]);
@@ -261,6 +269,7 @@ export function useInterviewSession() {
 				resumeText,
 				position,
 				interviewerRole,
+				focusContext: focusContext || undefined,
 			});
 
 			if (!data.openingRound || !data.topics || data.topics.length === 0) {
@@ -510,6 +519,13 @@ export function useInterviewSession() {
 				roundCount: visibleRounds.length,
 				reportMarkdown,
 				reviewSummary: fullText.slice(0, 200),
+				dimensions: currentScore ? {
+					accuracy: currentScore.accuracy,
+					structure: currentScore.structure,
+					depth: currentScore.depth,
+					riskHandling: currentScore.riskHandling,
+					reviewMindset: currentScore.reviewMindset,
+				} : undefined,
 			});
 		} catch {
 			setReviewData(null);

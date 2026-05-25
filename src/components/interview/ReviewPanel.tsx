@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { AnswerScore } from "@/lib/interview-core";
 import type { ReviewResponse, InterviewMode } from "@/hooks/useInterviewSession";
 import { downloadMarkdown, copyToClipboard } from "@/lib/export";
+import { NextActions } from "@/components/NextActions";
 
 type ReviewPanelProps = {
 	isGeneratingReview: boolean;
@@ -103,6 +104,16 @@ export function ReviewPanel({
 							</ul>
 						</div>
 					) : null}
+					{reviewData.learningPaths && reviewData.learningPaths.length > 0 ? (
+						<div>
+							<p className="text-sm font-medium text-amber-200">推荐学习方向</p>
+							<ul className="mt-1 space-y-1 text-sm leading-7 text-slate-300">
+								{reviewData.learningPaths.map((item) => (
+									<li key={item}>• {item}</li>
+								))}
+							</ul>
+						</div>
+					) : null}
 				</div>
 			) : (
 				<div className="mt-4 space-y-3 text-sm leading-7 text-slate-300">
@@ -152,6 +163,25 @@ export function ReviewPanel({
 					{copied ? "已复制" : "复制报告"}
 				</button>
 			</div>
+			{reviewData ? (
+				<NextActions
+					title="针对本次面试"
+					actions={[
+						{
+							label: "针对短板再练一轮",
+							description: "重新开始面试，AI 将重点追问薄弱方向",
+							href: "/mock-interview",
+							color: "amber",
+						},
+						{
+							label: "回去优化简历表达",
+							description: "根据复盘发现的不足改进简历",
+							href: "/resume-review",
+							color: "cyan",
+						},
+					]}
+				/>
+			) : null}
 		</section>
 	);
 }

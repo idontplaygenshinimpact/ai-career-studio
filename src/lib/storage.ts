@@ -63,6 +63,13 @@ export type InterviewRecord = {
 	roundCount: number;
 	reportMarkdown: string;
 	reviewSummary: string;
+	dimensions?: {
+		accuracy: number;
+		structure: number;
+		depth: number;
+		riskHandling: number;
+		reviewMindset: number;
+	};
 };
 
 const MAX_HISTORY = 20;
@@ -104,4 +111,22 @@ export function loadAiSettings(): UserAiSettings {
 		baseUrl: "https://api.deepseek.com/v1",
 		model: "deepseek-chat",
 	};
+}
+
+export type NextAction = {
+	type: "interview-focus" | "polish-project" | "retry-weakness";
+	label: string;
+	context: string;
+};
+
+export function saveNextActions(actions: NextAction[]) {
+	setItem("next_actions", actions);
+}
+
+export function loadNextActions(): NextAction[] {
+	return getItem<NextAction[]>("next_actions") || [];
+}
+
+export function clearNextActions() {
+	setItem("next_actions", []);
 }

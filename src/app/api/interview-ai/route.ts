@@ -22,6 +22,7 @@ type PlanRequest = {
 	resumeText?: string;
 	position?: string;
 	interviewerRole?: InterviewerRole;
+	focusContext?: string;
 };
 
 type RoundRequest = {
@@ -147,6 +148,7 @@ async function handlePlan(body: PlanRequest, aiConfig?: AiConfig) {
 			content: JSON.stringify({
 				position,
 				resumeText,
+				focusContext: body.focusContext || undefined,
 				requiredOutputRules: [
 					"resumeTopics 至少包含 3 个来自简历真实项目/实习/经历的追问点，除非简历本身信息不足",
 					"resumeTopics 里每个 boundary 必须说明本追问点不能越界到哪里",
@@ -155,7 +157,8 @@ async function handlePlan(body: PlanRequest, aiConfig?: AiConfig) {
 					`fundamentalTopics 必须针对"${position}"岗位，覆盖该岗位最高频的基础知识领域`,
 					"fundamentalTopics 的 question 必须像真实面试穿插提问，不要出成考试题",
 					"fundamentalTopics 每项的 id 必须以 fundamental- 开头",
-				],
+					body.focusContext ? `用户特别要求重点追问以下方向，请在 resumeTopics 和 fundamentalTopics 中优先覆盖：${body.focusContext}` : "",
+				].filter(Boolean),
 			}),
 		},
 	], aiConfig);
@@ -258,8 +261,8 @@ async function handleReview(body: ReviewRequest, aiConfig?: AiConfig) {
 		{
 			role: "system",
 			content: body.stream
-				? "你是资深前端面试官。请基于候选人的完整面试追问轨迹和回答，用自然语言生成个性化的面试复盘报告。格式：先写一段总体评价，然后分「强项」「短板」「下一步」三个小节，每节 2-4 条，最后给出面试可投递性判断（可投递/需打磨/建议继续练习）。直接输出纯文本，不要输出 JSON 或 Markdown 代码块。"
-				: "你是资深前端面试官。请基于候选人的完整面试追问轨迹和回答，生成个性化的面试复盘报告。必须只输出 JSON，不要 Markdown。JSON 字段：overallComment（一段 2-4 句话的总体评价）、strengths（字符串数组，2-4 条具体优势，引用实际回答内容）、weaknesses（字符串数组，2-4 条具体短板，指出哪些回答不够好）、nextSteps（字符串数组，3-5 条可执行的改进建议）、interviewReadiness（字符串，'可投递'|'需打磨'|'建议继续练习'）。",
+				? "你是资深前端面试官。请基于候选人的完整面试追问轨迹和回答，用自然语言生成个性化的面试复盘报告。格式：先写一段总体评价，然后分「强项」「短板」「下一步」「推荐学习方向」四个小节。强项和短板各 2-4 条，必须引用具体的追问和回答。下一步 3-5 条可立即执行的行动。推荐学习方向 2-4 条，针对本次面试暴露的薄弱知识点，给出具体的学习主题和建议学习顺序（例如：先理解 XX 概念，再练习 YY 场景）。最后给出面试可投递性判断（可投递/需打磨/建议继续练习）。直接输出纯文本，不要输出 JSON 或 Markdown 代码块。"
+				: "你是资深前端面试官。请基于候选人的完整面试追问轨迹和回答，生成个性化的面试复盘报告。必须只输出 JSON，不要 Markdown。JSON 字段：overallComment（一段 2-4 句话的总体评价）、strengths（字符串数组，2-4 条具体优势，引用实际回答内容）、weaknesses（字符串数组，2-4 条具体短板，指出哪些回答不够好）、nextSteps（字符串数组，3-5 条可执行的改进建议）、learningPaths（字符串数组，2-4 条推荐学习方向，针对薄弱知识点给出具体学习主题和建议顺序）、interviewReadiness（字符串，'可投递'|'需打磨'|'建议继续练习'）。",
 		},
 		{
 			role: "user",
@@ -306,6 +309,7 @@ async function handleReview(body: ReviewRequest, aiConfig?: AiConfig) {
 		strengths: filterStrings(parsed.strengths),
 		weaknesses: filterStrings(parsed.weaknesses),
 		nextSteps: filterStrings(parsed.nextSteps),
+		learningPaths: filterStrings(parsed.learningPaths),
 		interviewReadiness: typeof parsed.interviewReadiness === "string" ? parsed.interviewReadiness : "需打磨",
 	});
 }

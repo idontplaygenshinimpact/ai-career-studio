@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import type { JdMatchResult } from "@/lib/analysis";
 import { copyToClipboard } from "@/lib/export";
-import { saveSharedContext } from "@/lib/storage";
+import { saveSharedContext, saveNextActions } from "@/lib/storage";
 import { fetchWithAiHeaders } from "@/lib/fetch-ai";
+import { NextActions } from "@/components/NextActions";
 
 const sampleJd = "前端实习生，熟悉 React / Vue / TypeScript，了解组件化、状态管理、性能优化，有 AI 产品或数据可视化项目经验优先。";
 const sampleResume = "合肥工业大学计算机专业，熟悉 Vue3、React、TypeScript，做过 AI Career Studio、AgentChat 流式对话、ECharts 数据看板等项目。";
@@ -59,6 +60,21 @@ export function JdMatchWorkbench() {
         interviewDirections: data.interviewDirections,
       });
       saveSharedContext({ resumeText: resume, jdText: jd });
+
+      const actions = [];
+      if (data.missingKeywords && data.missingKeywords.length > 0) {
+        actions.push({
+          type: "interview-focus" as const,
+          label: `去模拟面试重点练缺失方向`,
+          context: `重点追问候选人在以下方向的能力：${data.missingKeywords.join("、")}`,
+        });
+      }
+      actions.push({
+        type: "polish-project" as const,
+        label: "去优化项目描述提高匹配度",
+        context: jd,
+      });
+      saveNextActions(actions);
     } catch (err) {
       setError(err instanceof Error ? err.message : "JD 匹配分析失败，请重试。");
     } finally {
@@ -147,6 +163,21 @@ export function JdMatchWorkbench() {
                 </button>
               </div>
             </section>
+
+            <NextActions actions={[
+              ...(result.missingKeywords.length > 0 ? [{
+                label: "去模拟面试重点练缺失方向",
+                description: `AI 将重点追问：${result.missingKeywords.slice(0, 3).join("、")}`,
+                href: "/mock-interview",
+                color: "cyan" as const,
+              }] : []),
+              {
+                label: "去优化项目描述提高匹配度",
+                description: "用 AI 把项目描述改成更匹配 JD 的表达",
+                href: "/project-polish",
+                color: "emerald" as const,
+              },
+            ]} />
           </>
         ) : (
           <section className="rounded-[32px] border border-amber-300/20 bg-amber-300/10 p-6">

@@ -5,9 +5,10 @@ import { useState } from "react";
 import type { ReviewResult } from "@/lib/analysis";
 import { parseResumeFile, supportedResumeFormats } from "@/lib/resume-file";
 import { copyToClipboard } from "@/lib/export";
-import { saveSharedContext } from "@/lib/storage";
+import { saveSharedContext, saveNextActions } from "@/lib/storage";
 import { fetchWithAiHeaders } from "@/lib/fetch-ai";
 import { useTypewriterList } from "@/hooks/useTypewriter";
+import { NextActions } from "@/components/NextActions";
 
 const sampleResume = `合肥工业大学计算机科学与技术专业大三在读，具备 Vue3 / React / TypeScript 前端开发经验。目前在 AI 数据公司实习，参与 img2code 数据生产链路及标注工具相关开发。项目中实现了 SSE 流式对话、Pinia 状态管理、ECharts 数据看板与工程化自动导入。`;
 
@@ -86,6 +87,18 @@ export function ResumeReviewWorkbench() {
         suggestions: data.suggestions,
       });
       saveSharedContext({ resumeText: resume });
+      saveNextActions([
+        {
+          type: "polish-project",
+          label: "去优化项目描述",
+          context: resume.slice(0, 200),
+        },
+        {
+          type: "interview-focus",
+          label: "用这份简历开始模拟面试",
+          context: "",
+        },
+      ]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "简历诊断失败，请重试。");
     } finally {
@@ -178,6 +191,27 @@ export function ResumeReviewWorkbench() {
                 {copied ? "已复制" : "复制诊断结果"}
               </button>
             </div>
+
+            <NextActions actions={[
+              {
+                label: "去优化项目描述",
+                description: "用 AI 把项目经历改成大厂简历风格",
+                href: "/project-polish",
+                color: "emerald",
+              },
+              {
+                label: "用这份简历开始模拟面试",
+                description: "简历内容已自动保存，面试页将自动加载",
+                href: "/mock-interview",
+                color: "cyan",
+              },
+              ...(review.score < 80 ? [{
+                label: "先做 JD 匹配看看覆盖度",
+                description: "检查简历和目标岗位的技能匹配程度",
+                href: "/jd-match",
+                color: "amber" as const,
+              }] : []),
+            ]} />
           </>
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-4 py-16 text-center">
