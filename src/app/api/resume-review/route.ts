@@ -1,0 +1,77 @@
+import { NextResponse } from "next/server";
+import { requestChatCompletion, parseModelJson } from "@/lib/ai-client";
+import { buildReview, type ReviewResult } from "@/lib/analysis";
+
+export async function POST(request: Request) {
+	let body: { resume?: string };
+
+	try {
+		body = (await request.json()) as { resume?: string };
+	} catch {
+		return NextResponse.json(
+			{ ok: false, error: "请求体不是合法 JSON。" },
+			{ status: 400 },
+		);
+	}
+
+	const resume = body.resume?.trim();
+
+	if (!resume || resume.length < 20) {
+		return NextResponse.json(
+			{ ok: false, error: "请提供至少 20 字的简历内容。" },
+			{ status: 400 },
+		);
+	}
+
+	if (!process.env.AI_API_KEY) {
+		return NextResponse.json({
+			ok: true,
+			provider: "local",
+			...buildReview(resume),
+		});
+	}
+
+	try {
+		const content = await requestChatCompletion([
+			{
+				role: "system",
+				content:
+					"你是资深前端面试官和简历顾问。请诊断候选人的简历，输出结构化评估。必须只输出 JSON，不要 Markdown。JSON 字段：score（0-100 整数）、strengths（字符串数组，3-5 条具体优势）、risks（字符串数组，3-5 条具体风险）、suggestions（字符串数组，3-5 条可执行的优化建议）。评分标准：项目完整度、技术深度、量化成果、表达清晰度。必须基于简历实际内容分析，不要泛泛而谈。",
+			},
+			{
+				role: "user",
+				content: JSON.stringify({
+					resume,
+					rules: [
+						"strengths 必须引用简历中的具体内容，不要说空话",
+						"risks 必须指出简历中的具体缺陷或缺失项",
+						"suggestions 必须是候选人可以立即执行的具体动作",
+						"score 基于前端实习/校招标准评估",
+					],
+				}),
+			},
+		]);
+
+		const parsed = parseModelJson<Partial<ReviewResult>>(
+			content,
+			"AI 未返回合法的简历诊断 JSON，请重试。",
+		);
+
+		return NextResponse.json({
+			ok: true,
+			provider: "ai",
+			score: typeof parsed.score === "number" ? Math.min(100, Math.max(0, Math.round(parsed.score))) : 70,
+			strengths: Array.isArray(parsed.strengths) ? parsed.strengths.filter((s): s is string => typeof s === "string" && s.length > 0) : [],
+			risks: Array.isArray(parsed.risks) ? parsed.risks.filter((s): s is string => typeof s === "string" && s.length > 0) : [],
+			suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions.filter((s): s is string => typeof s === "string" && s.length > 0) : [],
+		});
+	} catch (error) {
+		return NextResponse.json(
+			{
+				ok: false,
+				error: error instanceof Error ? error.message : "AI 简历诊断失败。",
+			},
+			{ status: 502 },
+		);
+	}
+}
