@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { InterviewTrainer } from "@/components/InterviewTrainer";
+import { InterviewHistory } from "@/components/interview/InterviewHistory";
+
+export const metadata: Metadata = {
+  title: "模拟面试 - AI Career Studio",
+  description: "上传真实简历，AI 面试官进行多轮追问，支持练习和连贯追问双模式，生成动态评分和个性化复盘报告。",
+};
 
 export default function MockInterviewPage() {
   return (
@@ -13,6 +20,7 @@ export default function MockInterviewPage() {
         </header>
 
         <InterviewTrainer />
+        <InterviewHistory />
       </section>
     </main>
   );

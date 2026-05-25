@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import { ResumeReviewWorkbench } from "@/components/ResumeReviewWorkbench";
+
+export const metadata: Metadata = {
+  title: "简历诊断 - AI Career Studio",
+  description: "上传或粘贴简历，AI 输出结构化评分、优势、风险点和优化建议。",
+};
 
 export default function ResumeReviewPage() {
   return (

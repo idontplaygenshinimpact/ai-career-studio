@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import { JdMatchWorkbench } from "@/components/JdMatchWorkbench";
+
+export const metadata: Metadata = {
+  title: "JD 匹配分析 - AI Career Studio",
+  description: "输入目标岗位 JD 和简历材料，AI 分析关键词命中、缺失技能、改写建议和面试准备方向。",
+};
 
 export default function JdMatchPage() {
   return (

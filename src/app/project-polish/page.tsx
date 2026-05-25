@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import { ProjectPolishWorkbench } from "@/components/ProjectPolishWorkbench";
+
+export const metadata: Metadata = {
+  title: "项目经历优化 - AI Career Studio",
+  description: "输入原始项目描述，AI 转换为大厂前端简历风格表达，生成亮点拆解和面试追问点。",
+};
 
 export default function ProjectPolishPage() {
   return (
