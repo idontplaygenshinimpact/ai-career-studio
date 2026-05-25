@@ -8,6 +8,10 @@ import { supportedResumeFormats } from "@/lib/resume-file";
 import { ScoreBoard } from "@/components/interview/ScoreBoard";
 import { ReviewPanel } from "@/components/interview/ReviewPanel";
 import { QuestionChain } from "@/components/interview/QuestionChain";
+import {
+	interviewerProfiles,
+	type InterviewerRole,
+} from "@/data/interviewer-roles";
 
 const modeOptions: Array<{
 	value: InterviewMode;
@@ -55,6 +59,35 @@ export function InterviewTrainer() {
 								</span>
 								<span className="mt-2 block text-xs leading-6 text-slate-300">
 									{item.description}
+								</span>
+							</button>
+						);
+					})}
+				</div>
+
+				<div className="mb-6 grid gap-3 sm:grid-cols-3">
+					{(Object.values(interviewerProfiles) as Array<{ id: InterviewerRole; name: string; description: string }>).map((role) => {
+						const isSelected = role.id === session.interviewerRole;
+
+						return (
+							<button
+								key={role.id}
+								type="button"
+								onClick={() => session.setInterviewerRole(role.id)}
+								className={`rounded-3xl border p-4 text-left transition-all ${
+									isSelected
+										? "border-amber-300/60 bg-amber-300/15 shadow-[0_18px_50px_rgba(251,191,36,0.12)]"
+										: "border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06]"
+								}`}
+							>
+								<span className="flex items-center gap-2 text-sm font-semibold text-white">
+									<span
+										className={`h-2.5 w-2.5 rounded-full ${isSelected ? "bg-amber-200" : "bg-slate-500"}`}
+									/>
+									{role.name}
+								</span>
+								<span className="mt-2 block text-xs leading-6 text-slate-300">
+									{role.description}
 								</span>
 							</button>
 						);

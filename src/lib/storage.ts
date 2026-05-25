@@ -87,3 +87,21 @@ export function deleteInterviewRecord(id: string) {
 		history.filter((r) => r.id !== id),
 	);
 }
+
+export type UserAiSettings = {
+	apiKey: string;
+	baseUrl: string;
+	model: string;
+};
+
+export function saveAiSettings(settings: UserAiSettings) {
+	setItem("ai_settings", settings);
+}
+
+export function loadAiSettings(): UserAiSettings {
+	return getItem<UserAiSettings>("ai_settings") || {
+		apiKey: "",
+		baseUrl: "https://api.deepseek.com/v1",
+		model: "deepseek-chat",
+	};
+}

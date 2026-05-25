@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { JdMatchResult } from "@/lib/analysis";
 import { copyToClipboard } from "@/lib/export";
 import { saveSharedContext } from "@/lib/storage";
+import { fetchWithAiHeaders } from "@/lib/fetch-ai";
 
 const sampleJd = "前端实习生，熟悉 React / Vue / TypeScript，了解组件化、状态管理、性能优化，有 AI 产品或数据可视化项目经验优先。";
 const sampleResume = "合肥工业大学计算机专业，熟悉 Vue3、React、TypeScript，做过 AI Career Studio、AgentChat 流式对话、ECharts 数据看板等项目。";
@@ -39,9 +40,8 @@ export function JdMatchWorkbench() {
     setError("");
 
     try {
-      const response = await fetch("/api/jd-match", {
+      const response = await fetchWithAiHeaders("/api/jd-match", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jd, resume }),
       });
 

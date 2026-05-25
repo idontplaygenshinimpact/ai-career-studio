@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requestChatCompletion, parseModelJson } from "@/lib/ai-client";
+import { extractAiConfigFromHeaders } from "@/lib/ai-config-header";
 import { buildReview, type ReviewResult } from "@/lib/analysis";
 
 export async function POST(request: Request) {
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
 		);
 	}
 
-	if (!process.env.AI_API_KEY) {
+	if (!process.env.AI_API_KEY && !request.headers.get("x-ai-api-key")) {
 		return NextResponse.json({
 			ok: true,
 			provider: "local",
@@ -32,7 +33,8 @@ export async function POST(request: Request) {
 	}
 
 	try {
-		const content = await requestChatCompletion([
+		const aiConfig = extractAiConfigFromHeaders(request);
+		const { content, debug } = await requestChatCompletion([
 			{
 				role: "system",
 				content:
@@ -50,7 +52,7 @@ export async function POST(request: Request) {
 					],
 				}),
 			},
-		]);
+		], aiConfig);
 
 		const parsed = parseModelJson<Partial<ReviewResult>>(
 			content,
@@ -64,6 +66,7 @@ export async function POST(request: Request) {
 			strengths: Array.isArray(parsed.strengths) ? parsed.strengths.filter((s): s is string => typeof s === "string" && s.length > 0) : [],
 			risks: Array.isArray(parsed.risks) ? parsed.risks.filter((s): s is string => typeof s === "string" && s.length > 0) : [],
 			suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions.filter((s): s is string => typeof s === "string" && s.length > 0) : [],
+			_debug: process.env.NODE_ENV === "development" ? debug : undefined,
 		});
 	} catch (error) {
 		return NextResponse.json(

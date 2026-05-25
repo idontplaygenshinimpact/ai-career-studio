@@ -6,6 +6,7 @@ import type { ReviewResult } from "@/lib/analysis";
 import { parseResumeFile, supportedResumeFormats } from "@/lib/resume-file";
 import { copyToClipboard } from "@/lib/export";
 import { saveSharedContext } from "@/lib/storage";
+import { fetchWithAiHeaders } from "@/lib/fetch-ai";
 import { useTypewriterList } from "@/hooks/useTypewriter";
 
 const sampleResume = `合肥工业大学计算机科学与技术专业大三在读，具备 Vue3 / React / TypeScript 前端开发经验。目前在 AI 数据公司实习，参与 img2code 数据生产链路及标注工具相关开发。项目中实现了 SSE 流式对话、Pinia 状态管理、ECharts 数据看板与工程化自动导入。`;
@@ -67,9 +68,8 @@ export function ResumeReviewWorkbench() {
     setError("");
 
     try {
-      const response = await fetch("/api/resume-review", {
+      const response = await fetchWithAiHeaders("/api/resume-review", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resume }),
       });
 

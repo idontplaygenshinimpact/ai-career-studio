@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requestChatCompletion, parseModelJson } from "@/lib/ai-client";
+import { extractAiConfigFromHeaders } from "@/lib/ai-config-header";
 import { matchJd, type JdMatchResult } from "@/lib/analysis";
 
 export async function POST(request: Request) {
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
 		);
 	}
 
-	if (!process.env.AI_API_KEY) {
+	if (!process.env.AI_API_KEY && !request.headers.get("x-ai-api-key")) {
 		return NextResponse.json({
 			ok: true,
 			provider: "local",
@@ -40,7 +41,8 @@ export async function POST(request: Request) {
 	}
 
 	try {
-		const content = await requestChatCompletion([
+		const aiConfig = extractAiConfigFromHeaders(request);
+		const { content, debug } = await requestChatCompletion([
 			{
 				role: "system",
 				content:
@@ -60,7 +62,7 @@ export async function POST(request: Request) {
 					],
 				}),
 			},
-		]);
+		], aiConfig);
 
 		const parsed = parseModelJson<Partial<JdMatchResult>>(
 			content,
@@ -78,6 +80,7 @@ export async function POST(request: Request) {
 			missingKeywords: filterStrings(parsed.missingKeywords),
 			rewriteAdvice: filterStrings(parsed.rewriteAdvice),
 			interviewDirections: filterStrings(parsed.interviewDirections),
+			_debug: process.env.NODE_ENV === "development" ? debug : undefined,
 		});
 	} catch (error) {
 		return NextResponse.json(

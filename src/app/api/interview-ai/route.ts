@@ -2,22 +2,30 @@ import { NextResponse } from "next/server";
 import {
 	requestChatCompletion,
 	parseModelJson,
+	type AiConfig,
 } from "@/lib/ai-client";
+import { extractAiConfigFromHeaders } from "@/lib/ai-config-header";
 import {
 	createOpeningRound,
 	frontendFundamentalTopics,
 	type InterviewRound,
 	type InterviewTopic,
 } from "@/lib/interview-core";
+import {
+	interviewerProfiles,
+	type InterviewerRole,
+} from "@/data/interviewer-roles";
 
 type PlanRequest = {
 	resumeText?: string;
 	position?: string;
+	interviewerRole?: InterviewerRole;
 };
 
 type RoundRequest = {
 	resumeText?: string;
 	position?: string;
+	interviewerRole?: InterviewerRole;
 	mode?: "practice" | "auto";
 	answer?: string;
 	currentRound?: InterviewRound;
@@ -60,12 +68,14 @@ export async function POST(request: Request) {
 		);
 	}
 
-	if (!process.env.AI_API_KEY) {
+	const aiConfig = extractAiConfigFromHeaders(request);
+
+	if (!aiConfig?.apiKey && !process.env.AI_API_KEY) {
 		return NextResponse.json(
 			{
 				ok: false,
 				error:
-					"当前是严格真实面试模式：未配置 AI_API_KEY，不能使用 Mock 兜底。请配置 AI_API_KEY / AI_BASE_URL / AI_MODEL 后再开始。",
+					"未配置 AI API Key。请在页面右上角「设置」中填入你的 API Key，或在服务端 .env.local 中配置。",
 			},
 			{ status: 503 },
 		);
@@ -73,15 +83,15 @@ export async function POST(request: Request) {
 
 	try {
 		if (body.action === "plan") {
-			return await handlePlan(body as PlanRequest);
+			return await handlePlan(body as PlanRequest, aiConfig);
 		}
 
 		if (body.action === "round") {
-			return await handleRound(body as RoundRequest);
+			return await handleRound(body as RoundRequest, aiConfig);
 		}
 
 		if (body.action === "review") {
-			return await handleReview(body as ReviewRequest);
+			return await handleReview(body as ReviewRequest, aiConfig);
 		}
 	} catch (error) {
 		return NextResponse.json(
@@ -102,8 +112,9 @@ export async function POST(request: Request) {
 	);
 }
 
-async function handlePlan(body: PlanRequest) {
+async function handlePlan(body: PlanRequest, aiConfig?: AiConfig) {
 	const resumeText = body.resumeText?.trim();
+	const profile = interviewerProfiles[body.interviewerRole || "gentle"];
 
 	if (!resumeText) {
 		return NextResponse.json(
@@ -112,11 +123,11 @@ async function handlePlan(body: PlanRequest) {
 		);
 	}
 
-	const content = await requestChatCompletion([
+	const { content } = await requestChatCompletion([
 		{
 			role: "system",
 			content:
-				"你是资深前端面试官。请解析候选人的真实简历，为前端实习/校招一面生成面试追问计划。必须只输出 JSON，不要 Markdown。JSON 字段：summary、topics。topics 是数组，每项包含 id、focus、dimension、question、boundary。必须从简历真实内容抽取项目/实习/经历追问点，不允许编造简历没有的项目；同时说明这些追问点的逻辑边界。计算机基础和前端八股由系统预置并穿插，不需要你重复生成基础题。",
+				`${profile.systemPromptPrefix}\n\n请解析候选人的真实简历，为前端实习/校招一面生成面试追问计划。必须只输出 JSON，不要 Markdown。JSON 字段：summary、topics。topics 是数组，每项包含 id、focus、dimension、question、boundary。必须从简历真实内容抽取项目/实习/经历追问点，不允许编造简历没有的项目；同时说明这些追问点的逻辑边界。计算机基础和前端八股由系统预置并穿插，不需要你重复生成基础题。`,
 		},
 		{
 			role: "user",
@@ -131,7 +142,7 @@ async function handlePlan(body: PlanRequest) {
 				],
 			}),
 		},
-	]);
+	], aiConfig);
 
 	const parsed = parseModelJson<{ summary?: unknown; topics?: unknown }>(
 		content,
@@ -153,7 +164,7 @@ async function handlePlan(body: PlanRequest) {
 	});
 }
 
-async function handleRound(body: RoundRequest) {
+async function handleRound(body: RoundRequest, aiConfig?: AiConfig) {
 	if (!body.resumeText?.trim() || !body.currentRound) {
 		return NextResponse.json(
 			{ ok: false, error: "缺少简历内容或当前追问轮次。" },
@@ -161,11 +172,13 @@ async function handleRound(body: RoundRequest) {
 		);
 	}
 
-	const content = await requestChatCompletion([
+	const profile = interviewerProfiles[body.interviewerRole || "gentle"];
+
+	const { content } = await requestChatCompletion([
 		{
 			role: "system",
 			content:
-				"你是严格、真实的前端面试官。请基于真实简历、当前追问点、候选人上一轮回答、已覆盖内容和面试模式生成下一问，同时对候选人上一轮回答进行分项评分。必须只输出 JSON，不要 Markdown。JSON 字段必须包含 id、focus、dimension、question、boundary、feedback、followUp、trigger、answerStandard、shouldSwitchFocus、switchReason、answerScore。answerScore 是对象，包含 total（0-100）、accuracy（0-30，技术准确性）、structure（0-25，表达结构）、depth（0-25，项目深度）、riskHandling（0-20，异常边界）、reviewMindset（0-15，复盘意识）、comment（一句话点评）。不要使用 Mock 语气，不要说自己是 AI。连贯追问模式下，由你作为面试官主导是否继续深挖或切题，不能依赖候选人手动结束追问。",
+				`${profile.systemPromptPrefix}\n\n请基于真实简历、当前追问点、候选人上一轮回答、已覆盖内容和面试模式生成下一问，同时对候选人上一轮回答进行分项评分。必须只输出 JSON，不要 Markdown。JSON 字段必须包含 id、focus、dimension、question、boundary、feedback、followUp、trigger、answerStandard、shouldSwitchFocus、switchReason、answerScore。answerScore 是对象，包含 total（0-100）、accuracy（0-30，技术准确性）、structure（0-25，表达结构）、depth（0-25，项目深度）、riskHandling（0-20，异常边界）、reviewMindset（0-15，复盘意识）、comment（一句话点评）。不要使用 Mock 语气，不要说自己是 AI。连贯追问模式下，由你作为面试官主导是否继续深挖或切题，不能依赖候选人手动结束追问。`,
 		},
 		{
 			role: "user",
@@ -192,7 +205,7 @@ async function handleRound(body: RoundRequest) {
 				],
 			}),
 		},
-	]);
+	], aiConfig);
 
 	const parsed = parseModelJson<Partial<InterviewRound> & { answerScore?: unknown }>(
 		content,
@@ -211,7 +224,7 @@ async function handleRound(body: RoundRequest) {
 	});
 }
 
-async function handleReview(body: ReviewRequest) {
+async function handleReview(body: ReviewRequest, aiConfig?: AiConfig) {
 	if (!body.rounds || body.rounds.length === 0) {
 		return NextResponse.json(
 			{ ok: false, error: "没有面试记录可供复盘。" },
@@ -219,7 +232,7 @@ async function handleReview(body: ReviewRequest) {
 		);
 	}
 
-	const content = await requestChatCompletion([
+	const { content } = await requestChatCompletion([
 		{
 			role: "system",
 			content:
@@ -240,7 +253,7 @@ async function handleReview(body: ReviewRequest) {
 				],
 			}),
 		},
-	]);
+	], aiConfig);
 
 	const parsed = parseModelJson<Record<string, unknown>>(
 		content,

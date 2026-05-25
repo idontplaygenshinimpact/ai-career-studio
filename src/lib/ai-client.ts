@@ -4,34 +4,64 @@ type ChatCompletionResponse = {
 			content?: string;
 		};
 	}>;
+	usage?: {
+		prompt_tokens?: number;
+		completion_tokens?: number;
+		total_tokens?: number;
+	};
 };
+
+export type AiRequestDebug = {
+	model: string;
+	promptPreview: string;
+	promptTokens: number;
+	completionTokens: number;
+	totalTokens: number;
+	latencyMs: number;
+};
+
+export type AiConfig = {
+	apiKey?: string;
+	baseUrl?: string;
+	model?: string;
+};
+
+export function resolveAiConfig(override?: AiConfig): Required<Omit<AiConfig, "apiKey">> & { apiKey: string } {
+	const apiKey = override?.apiKey || process.env.AI_API_KEY || "";
+	const baseUrl = override?.baseUrl || process.env.AI_BASE_URL || "https://api.openai.com/v1";
+	const model = override?.model || process.env.AI_MODEL || "gpt-4o-mini";
+	return { apiKey, baseUrl, model };
+}
 
 export async function requestChatCompletion(
 	messages: Array<{ role: "system" | "user"; content: string }>,
-) {
-	if (!process.env.AI_API_KEY) {
+	configOverride?: AiConfig,
+): Promise<{ content: string; debug: AiRequestDebug }> {
+	const config = resolveAiConfig(configOverride);
+
+	if (!config.apiKey) {
 		throw new Error(
-			"未配置 AI_API_KEY，无法调用 AI 服务。请在 .env.local 中配置 AI_API_KEY / AI_BASE_URL / AI_MODEL。",
+			"未配置 AI API Key。请在页面右上角「设置」中填入你的 API Key，或在 .env.local 中配置。",
 		);
 	}
 
-	const baseUrl = process.env.AI_BASE_URL || "https://api.openai.com/v1";
-	const model = process.env.AI_MODEL || "gpt-4o-mini";
+	const startTime = Date.now();
 	const response = await fetch(
-		`${baseUrl.replace(/\/$/, "")}/chat/completions`,
+		`${config.baseUrl.replace(/\/$/, "")}/chat/completions`,
 		{
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				Authorization: `Bearer ${process.env.AI_API_KEY}`,
+				Authorization: `Bearer ${config.apiKey}`,
 			},
 			body: JSON.stringify({
-				model,
+				model: config.model,
 				temperature: 0.35,
 				messages,
 			}),
 		},
 	);
+	const latencyMs = Date.now() - startTime;
 
 	if (!response.ok) {
 		const detail = await response.text().catch(() => "");
@@ -45,7 +75,17 @@ export async function requestChatCompletion(
 		throw new Error("AI 返回为空。请检查模型配置。");
 	}
 
-	return content;
+	const systemMsg = messages.find((m) => m.role === "system");
+	const debug: AiRequestDebug = {
+		model: config.model,
+		promptPreview: systemMsg ? systemMsg.content.slice(0, 200) : "",
+		promptTokens: data.usage?.prompt_tokens ?? 0,
+		completionTokens: data.usage?.completion_tokens ?? 0,
+		totalTokens: data.usage?.total_tokens ?? 0,
+		latencyMs,
+	};
+
+	return { content, debug };
 }
 
 export async function requestChatStream(

@@ -9,6 +9,8 @@ import {
 } from "@/lib/interview-core";
 import { parseResumeFile } from "@/lib/resume-file";
 import { loadSharedContext, saveInterviewRecord } from "@/lib/storage";
+import { fetchWithAiHeaders } from "@/lib/fetch-ai";
+import type { InterviewerRole } from "@/data/interviewer-roles";
 
 export type InterviewMode = "practice" | "auto";
 
@@ -121,6 +123,7 @@ export function getSavedAnswer(
 
 export function useInterviewSession() {
 	const [mode, setMode] = useState<InterviewMode>("auto");
+	const [interviewerRole, setInterviewerRole] = useState<InterviewerRole>("gentle");
 	const [position, setPosition] = useState("前端实习生");
 	const [resumeText, setResumeText] = useState("");
 	const [fileStatus, setFileStatus] = useState(emptyResumeHint);
@@ -198,9 +201,8 @@ export function useInterviewSession() {
 		visibleRounds.filter(isFundamentalRound).length;
 
 	async function requestJson<T>(payload: Record<string, unknown>): Promise<T> {
-		const response = await fetch("/api/interview-ai", {
+		const response = await fetchWithAiHeaders("/api/interview-ai", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify(payload),
 		});
 
@@ -257,6 +259,7 @@ export function useInterviewSession() {
 				action: "plan",
 				resumeText,
 				position,
+				interviewerRole,
 			});
 
 			if (!data.openingRound || !data.topics || data.topics.length === 0) {
@@ -336,6 +339,7 @@ export function useInterviewSession() {
 			action: "round",
 			resumeText,
 			position,
+			interviewerRole,
 			mode,
 			answer,
 			currentRound: round,
@@ -523,6 +527,7 @@ export function useInterviewSession() {
 	return {
 		// State
 		mode,
+		interviewerRole,
 		position,
 		resumeText,
 		fileStatus,
@@ -558,6 +563,7 @@ export function useInterviewSession() {
 
 		// Setters
 		setMode,
+		setInterviewerRole,
 		setPosition,
 		setResumeText,
 		setAnswer,

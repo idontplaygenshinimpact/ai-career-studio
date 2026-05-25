@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { ProjectPolishResult } from "@/lib/analysis";
 import { useTypewriter, useTypewriterList } from "@/hooks/useTypewriter";
+import { fetchWithAiHeaders } from "@/lib/fetch-ai";
 
 const sampleProject = "做了一个 AI 对话项目，实现 SSE 流式输出、会话管理、Markdown 渲染和消息中断。";
 
@@ -27,9 +28,8 @@ export function ProjectPolishWorkbench() {
     setError("");
 
     try {
-      const response = await fetch("/api/project-polish", {
+      const response = await fetchWithAiHeaders("/api/project-polish", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ project }),
       });
 

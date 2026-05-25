@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { navItems } from "@/data/site";
+import { AiSettingsPanel } from "@/components/AiSettingsPanel";
 
 export function SiteNav() {
   return (
@@ -17,16 +18,19 @@ export function SiteNav() {
           </span>
         </Link>
 
-        <div className="flex gap-2 overflow-x-auto rounded-full border border-white/10 bg-white/[0.04] p-1 text-sm text-slate-300 shadow-inner shadow-black/20">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="whitespace-nowrap rounded-full px-4 py-2 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              {item.label}
-            </Link>
-          ))}
+        <div className="flex items-center gap-3">
+          <div className="flex gap-2 overflow-x-auto rounded-full border border-white/10 bg-white/[0.04] p-1 text-sm text-slate-300 shadow-inner shadow-black/20">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="whitespace-nowrap rounded-full px-4 py-2 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+          <AiSettingsPanel />
         </div>
       </div>
     </nav>
