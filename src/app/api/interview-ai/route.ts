@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
 import {
+	requestChatCompletion,
+	parseModelJson,
+} from "@/lib/ai-client";
+import {
 	createOpeningRound,
 	frontendFundamentalTopics,
 	type InterviewRound,
 	type InterviewTopic,
 } from "@/lib/interview-core";
-
-type ChatCompletionResponse = {
-	choices?: Array<{
-		message?: {
-			content?: string;
-		};
-	}>;
-};
 
 type PlanRequest = {
 	resumeText?: string;
@@ -35,13 +31,27 @@ type RoundRequest = {
 	}>;
 };
 
+type ReviewRequest = {
+	resumeText?: string;
+	position?: string;
+	mode?: "practice" | "auto";
+	rounds?: Array<{
+		focus: string;
+		question: string;
+		answer: string;
+		dimension: string;
+	}>;
+	averageScore?: number;
+};
+
 export async function POST(request: Request) {
-	let body: { action?: string } & (PlanRequest | RoundRequest);
+	let body: { action?: string } & (PlanRequest | RoundRequest | ReviewRequest);
 
 	try {
 		body = (await request.json()) as { action?: string } & (
 			| PlanRequest
 			| RoundRequest
+			| ReviewRequest
 		);
 	} catch {
 		return NextResponse.json(
@@ -68,6 +78,10 @@ export async function POST(request: Request) {
 
 		if (body.action === "round") {
 			return await handleRound(body as RoundRequest);
+		}
+
+		if (body.action === "review") {
+			return await handleReview(body as ReviewRequest);
 		}
 	} catch (error) {
 		return NextResponse.json(
@@ -151,7 +165,7 @@ async function handleRound(body: RoundRequest) {
 		{
 			role: "system",
 			content:
-				"你是严格、真实的前端面试官。请基于真实简历、当前追问点、候选人上一轮回答、已覆盖内容和面试模式生成下一问。必须只输出 JSON，不要 Markdown。JSON 字段必须包含 id、focus、dimension、question、boundary、feedback、followUp、trigger、answerStandard、shouldSwitchFocus、switchReason。不要使用 Mock 语气，不要说自己是 AI。连贯追问模式下，由你作为面试官主导是否继续深挖或切题，不能依赖候选人手动结束追问。",
+				"你是严格、真实的前端面试官。请基于真实简历、当前追问点、候选人上一轮回答、已覆盖内容和面试模式生成下一问，同时对候选人上一轮回答进行分项评分。必须只输出 JSON，不要 Markdown。JSON 字段必须包含 id、focus、dimension、question、boundary、feedback、followUp、trigger、answerStandard、shouldSwitchFocus、switchReason、answerScore。answerScore 是对象，包含 total（0-100）、accuracy（0-30，技术准确性）、structure（0-25，表达结构）、depth（0-25，项目深度）、riskHandling（0-20，异常边界）、reviewMindset（0-15，复盘意识）、comment（一句话点评）。不要使用 Mock 语气，不要说自己是 AI。连贯追问模式下，由你作为面试官主导是否继续深挖或切题，不能依赖候选人手动结束追问。",
 		},
 		{
 			role: "user",
@@ -173,60 +187,78 @@ async function handleRound(body: RoundRequest) {
 					"切换逻辑边界：回答已达到 answerStandard、继续追问会重复、继续追问会越过 boundary、或需要按一面节奏穿插基础题时，都应 shouldSwitchFocus=true",
 					"shouldSwitchFocus=true 时，focus/question/dimension/boundary 必须切换到 nextTopicIfDone",
 					"练习模式可以更耐心地围绕当前点追问；连贯追问模式必须更像真实面试官控制节奏",
+					"answerScore.total 必须等于 accuracy+structure+depth+riskHandling+reviewMindset 之和（允许±2 误差），不要随意给高分",
+					"answerScore.comment 用一句话指出回答的核心优缺点",
 				],
 			}),
 		},
 	]);
 
-	const parsed = parseModelJson<Partial<InterviewRound>>(
+	const parsed = parseModelJson<Partial<InterviewRound> & { answerScore?: unknown }>(
 		content,
 		"真实 AI 没有返回合法的追问 JSON，请重试。",
 	);
 	const round = normalizeRound(parsed, body.currentRound, body.nextTopic);
+	const answerScore = normalizeAnswerScore(parsed.answerScore);
 
 	return NextResponse.json({
 		ok: true,
 		provider: "real",
 		round,
+		answerScore,
 		shouldSwitchFocus: Boolean(round.shouldSwitchFocus),
 		switchReason: round.switchReason,
 	});
 }
 
-async function requestChatCompletion(
-	messages: Array<{ role: "system" | "user"; content: string }>,
-) {
-	const baseUrl = process.env.AI_BASE_URL || "https://api.openai.com/v1";
-	const model = process.env.AI_MODEL || "gpt-4o-mini";
-	const response = await fetch(
-		`${baseUrl.replace(/\/$/, "")}/chat/completions`,
+async function handleReview(body: ReviewRequest) {
+	if (!body.rounds || body.rounds.length === 0) {
+		return NextResponse.json(
+			{ ok: false, error: "没有面试记录可供复盘。" },
+			{ status: 400 },
+		);
+	}
+
+	const content = await requestChatCompletion([
 		{
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${process.env.AI_API_KEY}`,
-			},
-			body: JSON.stringify({
-				model,
-				temperature: 0.35,
-				messages,
+			role: "system",
+			content:
+				"你是资深前端面试官。请基于候选人的完整面试追问轨迹和回答，生成个性化的面试复盘报告。必须只输出 JSON，不要 Markdown。JSON 字段：overallComment（一段 2-4 句话的总体评价）、strengths（字符串数组，2-4 条具体优势，引用实际回答内容）、weaknesses（字符串数组，2-4 条具体短板，指出哪些回答不够好）、nextSteps（字符串数组，3-5 条可执行的改进建议）、interviewReadiness（字符串，'可投递'|'需打磨'|'建议继续练习'）。",
+		},
+		{
+			role: "user",
+			content: JSON.stringify({
+				position: body.position || "前端实习生",
+				mode: body.mode || "auto",
+				averageScore: body.averageScore ?? 0,
+				resumeText: body.resumeText?.slice(0, 500),
+				rounds: body.rounds,
+				rules: [
+					"strengths 和 weaknesses 必须引用具体的追问和回答内容",
+					"nextSteps 必须是候选人可以立即执行的具体动作",
+					"不要泛泛而谈，要针对这次面试的实际表现",
+				],
 			}),
 		},
+	]);
+
+	const parsed = parseModelJson<Record<string, unknown>>(
+		content,
+		"AI 未返回合法的复盘 JSON，请重试。",
 	);
 
-	if (!response.ok) {
-		const detail = await response.text().catch(() => "");
-		throw new Error(`真实 AI 请求失败：${response.status} ${detail}`);
-	}
+	const filterStrings = (val: unknown) =>
+		Array.isArray(val) ? val.filter((s): s is string => typeof s === "string" && s.length > 0) : [];
 
-	const data = (await response.json()) as ChatCompletionResponse;
-	const content = data.choices?.[0]?.message?.content;
-
-	if (!content) {
-		throw new Error("真实 AI 返回为空。请检查模型配置。 ");
-	}
-
-	return content;
+	return NextResponse.json({
+		ok: true,
+		provider: "real",
+		overallComment: typeof parsed.overallComment === "string" ? parsed.overallComment : "",
+		strengths: filterStrings(parsed.strengths),
+		weaknesses: filterStrings(parsed.weaknesses),
+		nextSteps: filterStrings(parsed.nextSteps),
+		interviewReadiness: typeof parsed.interviewReadiness === "string" ? parsed.interviewReadiness : "需打磨",
+	});
 }
 
 function mergeTopics(resumeTopics: InterviewTopic[]) {
@@ -336,21 +368,6 @@ function normalizeRound(
 	};
 }
 
-function stripCodeFence(content: string) {
-	return content
-		.replace(/^```(?:json)?\s*/i, "")
-		.replace(/```$/i, "")
-		.trim();
-}
-
-function parseModelJson<T>(content: string, errorMessage: string): T {
-	try {
-		return JSON.parse(stripCodeFence(content)) as T;
-	} catch {
-		throw new Error(errorMessage);
-	}
-}
-
 function pickText(value: unknown, fallback: string) {
 	return typeof value === "string" && value.trim().length > 0
 		? value.trim()
@@ -363,4 +380,26 @@ function slugify(value: string) {
 		.toLowerCase()
 		.replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")
 		.replace(/^-+|-+$/g, "");
+}
+
+function normalizeAnswerScore(value: unknown) {
+	if (!value || typeof value !== "object") {
+		return null;
+	}
+
+	const record = value as Record<string, unknown>;
+	const pickNum = (key: string, max: number) => {
+		const v = record[key];
+		return typeof v === "number" ? Math.min(max, Math.max(0, Math.round(v))) : 0;
+	};
+
+	const accuracy = pickNum("accuracy", 30);
+	const structure = pickNum("structure", 25);
+	const depth = pickNum("depth", 25);
+	const riskHandling = pickNum("riskHandling", 20);
+	const reviewMindset = pickNum("reviewMindset", 15);
+	const total = pickNum("total", 100) || (accuracy + structure + depth + riskHandling + reviewMindset);
+	const comment = typeof record.comment === "string" ? record.comment : "";
+
+	return { total, accuracy, structure, depth, riskHandling, reviewMindset, comment };
 }

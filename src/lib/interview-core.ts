@@ -23,6 +23,7 @@ export type AnswerScore = {
 	depth: number;
 	riskHandling: number;
 	reviewMindset: number;
+	comment?: string;
 };
 
 export const frontendFundamentalTopics: InterviewTopic[] = [
