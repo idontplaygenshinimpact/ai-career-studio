@@ -83,8 +83,8 @@ test.describe("模拟面试页", () => {
 	test("有简历输入框和模式选择", async ({ page }) => {
 		await page.goto("/mock-interview");
 		await expect(page.locator("#resume-context")).toBeVisible();
-		await expect(page.locator("text=练习模式")).toBeVisible();
-		await expect(page.locator("text=连贯追问模式")).toBeVisible();
+		await expect(page.getByRole("button", { name: /练习模式/ })).toBeVisible();
+		await expect(page.getByRole("button", { name: /连贯追问模式/ })).toBeVisible();
 	});
 
 	test("有面试官角色选择", async ({ page }) => {
