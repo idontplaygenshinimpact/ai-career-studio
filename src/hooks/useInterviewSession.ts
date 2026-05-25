@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	createOpeningRound,
 	getInterviewSummary,
@@ -8,6 +8,7 @@ import {
 	scoreInterviewAnswer,
 } from "@/lib/interview-core";
 import { parseResumeFile } from "@/lib/resume-file";
+import { loadSharedContext, saveInterviewRecord } from "@/lib/storage";
 
 export type InterviewMode = "practice" | "auto";
 
@@ -125,6 +126,17 @@ export function useInterviewSession() {
 	const [fileStatus, setFileStatus] = useState(emptyResumeHint);
 	const [isParsingFile, setIsParsingFile] = useState(false);
 	const [isPreparing, setIsPreparing] = useState(false);
+
+	useEffect(() => {
+		const ctx = loadSharedContext();
+		if (ctx.resumeText) {
+			setResumeText(ctx.resumeText);
+			setFileStatus("已从简历诊断 / JD 匹配页自动加载简历内容。");
+		}
+		if (ctx.position) {
+			setPosition(ctx.position);
+		}
+	}, []);
 	const [planSummary, setPlanSummary] = useState("尚未基于简历生成面试计划。 ");
 	const [topics, setTopics] = useState<InterviewTopic[]>([]);
 	const [activeQuestion, setActiveQuestion] = useState(0);
@@ -453,6 +465,17 @@ export function useInterviewSession() {
 			});
 
 			setReviewData(response);
+
+			saveInterviewRecord({
+				id: `interview-${Date.now()}`,
+				date: new Date().toISOString(),
+				position,
+				mode,
+				averageScore,
+				roundCount: visibleRounds.length,
+				reportMarkdown,
+				reviewSummary: response.overallComment || "",
+			});
 		} catch {
 			setReviewData(null);
 		} finally {
