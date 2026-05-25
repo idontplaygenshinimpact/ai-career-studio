@@ -46,7 +46,7 @@ export function AiSettingsPanel() {
 
 			{isOpen ? (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-					<div className="mx-4 w-full max-w-lg rounded-[28px] border border-white/10 bg-slate-950 p-6 shadow-[0_24px_90px_rgba(0,0,0,0.5)]">
+					<div role="dialog" aria-label="AI 配置" className="mx-4 w-full max-w-lg rounded-[28px] border border-white/10 bg-slate-950 p-6 shadow-[0_24px_90px_rgba(0,0,0,0.5)]">
 						<div className="flex items-center justify-between">
 							<h2 className="text-lg font-semibold text-white">AI 配置</h2>
 							<button

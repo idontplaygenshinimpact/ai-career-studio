@@ -119,7 +119,7 @@ export function InterviewTrainer() {
 								请复制文本后粘贴；真实面试模式不使用 Mock 兜底。
 							</p>
 						</div>
-						<label className="inline-flex cursor-pointer items-center justify-center rounded-full border border-cyan-300/25 bg-cyan-300/10 px-5 py-3 text-sm font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/15">
+						<label aria-label="上传简历文件" className="inline-flex cursor-pointer items-center justify-center rounded-full border border-cyan-300/25 bg-cyan-300/10 px-5 py-3 text-sm font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/15">
 							{session.isParsingFile ? "解析中..." : "上传简历文件"}
 							<input
 								type="file"
@@ -208,6 +208,7 @@ export function InterviewTrainer() {
 							<button
 								type="button"
 								onClick={speech.isListening ? speech.stop : speech.start}
+								aria-label={speech.isListening ? "停止语音识别" : "开始语音输入"}
 								className={`rounded-full px-4 py-2 text-xs font-semibold transition-all ${
 									speech.isListening
 										? "border border-red-300/40 bg-red-300/15 text-red-100 shadow-[0_0_20px_rgba(252,165,165,0.15)]"

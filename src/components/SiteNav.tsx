@@ -4,7 +4,7 @@ import { AiSettingsPanel } from "@/components/AiSettingsPanel";
 
 export function SiteNav() {
   return (
-    <nav className="border-b border-white/10 bg-slate-950/85 px-6 py-4 text-slate-100 backdrop-blur-xl lg:px-10">
+    <nav aria-label="主导航" className="border-b border-white/10 bg-slate-950/85 px-6 py-4 text-slate-100 backdrop-blur-xl lg:px-10">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Link href="/" className="group inline-flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-300/30 bg-amber-300/15 text-sm font-black text-amber-200 shadow-[0_0_30px_rgba(251,191,36,0.18)]">
