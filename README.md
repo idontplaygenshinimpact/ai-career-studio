@@ -1,100 +1,238 @@
 # AI Career Studio
 
-一个面向前端实习 / 校招场景的 AI 求职训练工作台，包含 JD 匹配、简历诊断、项目经历优化和多轮模拟面试追问。
+面向前端实习 / 校招场景的 AI 求职训练工作台。覆盖 JD 匹配、简历诊断、项目经历优化和多轮模拟面试追问，所有分析均由真实 AI 驱动，输出结构化评分、风险点、追问链和复盘报告。
 
-项目重点不是做普通 Chatbot，而是把求职训练拆成结构化任务流：评分、风险点、追问链、即时反馈和复盘报告。
+## 功能概览
 
-## Features
+### 1. JD 匹配（`/jd-match`）
 
-- JD 匹配：关键词命中、缺失项、改写建议、面试准备方向
-- 简历诊断：支持粘贴文本或上传 `.txt` / `.md` / `.json` / `.docx`，实时输出评分、风险点、优化建议
-- 项目优化：输入项目描述后生成大厂风格表达、追问点和简历 bullet
-- 真实模拟面试：上传或粘贴真实简历后，由真实 AI 解析项目 / 实习 / 技能线索，再按练习 / 连贯追问双模式生成追问、动态评分和 Markdown 复盘报告
-- 作品集首页：展示能力矩阵、求职训练工作流和简历可写亮点
-- 真实 AI 面试官：支持 OpenAI-compatible API；真实面试模式不使用 Mock 兜底，未配置密钥时会明确提示配置问题
+输入目标岗位 JD 和简历材料，AI 分析匹配程度并给出行动建议。
 
-## Tech Stack
+- **匹配评分**：0-100 分，综合技能覆盖率、项目相关性和经验匹配度
+- **命中关键词**：JD 和简历都明确提到的具体技能或经验
+- **缺失项**：JD 明确要求但简历中缺失的关键技能
+- **改写建议**：针对该 JD 的简历修改方向
+- **面试准备方向**：基于匹配和缺失结果的面试备考策略
 
-- Next.js 15
-- TypeScript
-- Tailwind CSS 3
-- App Router
+### 2. 简历诊断（`/resume-review`）
 
-## Pages
+支持粘贴文本或上传文件（`.txt` / `.md` / `.json` / `.docx`），AI 输出结构化评估。
 
-- `/` 首页
-- `/jd-match` 岗位匹配
-- `/resume-review` 简历诊断
-- `/project-polish` 项目优化
-- `/mock-interview` 模拟面试
+- **综合评分**：基于项目完整度、技术深度、量化成果、表达清晰度
+- **优势分析**：引用简历中的具体内容指出亮点
+- **风险诊断**：指出简历中的具体缺陷或缺失项
+- **优化建议**：候选人可立即执行的具体改进动作
 
-## Portfolio Highlights
+### 3. 项目优化（`/project-polish`）
 
-- 基于 Next.js App Router + TypeScript 搭建作品集级 AI 产品原型，适合部署到 Vercel 展示。
-- 将 AI 输出拆为结构化数据模块，覆盖 JD 命中、评分、风险、建议、追问和复盘，避免只输出一段聊天文本。
-- 模拟面试页支持上传 / 粘贴真实简历，先由真实模型解析追问计划，再按练习 / 连贯追问双模式推进，并展示触发依据、考察维度、合格标准。
-- 简历诊断页和模拟面试页支持多格式文件导入，Word 简历通过客户端解析提取文本。
-- 全站采用深色“求职作战室”视觉风格，适配桌面端和移动端。
+输入原始项目描述，AI 转换为大厂前端简历风格表达。
 
-## Resume File Support
+- **优化后描述**：用"问题-方案-结果"结构重写
+- **亮点拆解**：指出原始描述和优化后描述的关键差异
+- **面试追问点**：面试官基于优化后描述可能追问的真实问题
+- **简历 bullet**：可直接放入简历的条目，包含动作动词 + 技术细节 + 可量化结果
 
-当前支持：
+### 4. 模拟面试（`/mock-interview`）
 
-- `.txt`
-- `.md`
-- `.json`
-- `.docx`
+核心功能。上传或粘贴真实简历后，AI 面试官进行多轮追问。
 
-说明：文件解析在浏览器端完成，模拟面试会把解析出的简历文本发送给配置的真实 AI 接口生成追问。PDF 暂不直接解析，建议复制 PDF 文本粘贴，或转为 `.docx` / `.txt` 后上传。
+**面试流程**：
+1. 上传/粘贴简历 → AI 解析项目、实习、技能线索
+2. 生成追问计划：简历相关追问点 + 前端岗位高频基础题交叉穿插
+3. 逐轮回答 → AI 根据回答质量生成下一问 + 分项评分
+4. 结束面试 → AI 生成个性化复盘报告
 
-## Resume Description
+**两种面试模式**：
+- **练习模式**：允许手动切换追问点，适合打磨 STAR 表达
+- **连贯追问模式**：AI 面试官主导深挖和切题，模拟真实面试节奏
 
-可写入简历的项目描述：
+**每轮追问包含**：
+- 触发依据：说明追问来自回答或简历的哪个具体点
+- 考察维度：本轮追问评估的能力方向
+- 合格标准：合格回答需要覆盖的 3-5 个关键点
+- 逻辑边界：追问不会越界到哪些范围
 
-> AI Career Studio：基于 Next.js + TypeScript 搭建 AI 求职训练工作台，覆盖 JD 匹配、简历诊断、项目经历优化和真实多轮模拟面试追问；设计结构化真实 AI 面试官输出协议，将简历解析、岗位基础题、追问链和复盘报告拆分为可复用数据模块；实现回答驱动的面试流程，支持逐轮回答、动态分项评分与 Markdown 结果复盘，适合部署到 Vercel 并作为 GitHub 作品集展示。
+**AI 动态评分**（每轮）：
+- 技术准确性（0-30）
+- 表达结构（0-25）
+- 项目深度（0-25）
+- 异常边界（0-20）
+- 复盘意识（0-15）
+- 一句话点评
 
-## Run Locally
+**AI 复盘报告**（面试结束后）：
+- 总体评价
+- 具体优势（引用实际回答）
+- 具体短板（指出哪些回答不足）
+- 可执行改进建议
+- 面试可投递性判断
+
+### 5. 首页（`/`）
+
+作品集展示页，包含能力矩阵、工作流设计、技术栈和核心数据指标。
+
+## 技术栈
+
+| 层级 | 技术 |
+|---|---|
+| 框架 | Next.js 15（App Router） |
+| 语言 | TypeScript（strict mode） |
+| 样式 | Tailwind CSS 3 |
+| AI 接口 | OpenAI-compatible Chat Completions API |
+| 文件解析 | mammoth（浏览器端 .docx 解析） |
+| 测试 | vitest |
+
+## 模块设计
+
+```
+src/
+├── app/                          # Next.js App Router 页面和 API
+│   ├── page.tsx                  # 首页
+│   ├── layout.tsx                # 全局 layout（深色主题 + 导航）
+│   ├── jd-match/page.tsx         # JD 匹配页
+│   ├── resume-review/page.tsx    # 简历诊断页
+│   ├── project-polish/page.tsx   # 项目优化页
+│   ├── mock-interview/page.tsx   # 模拟面试页
+│   └── api/
+│       ├── interview-ai/route.ts # 模拟面试 AI 接口（plan/round/review）
+│       ├── resume-review/route.ts# 简历诊断 AI 接口
+│       ├── jd-match/route.ts     # JD 匹配 AI 接口
+│       └── project-polish/route.ts# 项目优化 AI 接口
+│
+├── components/
+│   ├── InterviewTrainer.tsx      # 模拟面试主组件（薄 shell，组装子组件）
+│   ├── JdMatchWorkbench.tsx      # JD 匹配工作台
+│   ├── ProjectPolishWorkbench.tsx# 项目优化工作台
+│   ├── ResumeReviewWorkbench.tsx # 简历诊断工作台
+│   ├── SiteNav.tsx               # 全局导航栏
+│   └── interview/                # 模拟面试子组件
+│       ├── ScoreBoard.tsx        # 实时评分面板
+│       ├── ReviewPanel.tsx       # 复盘报告面板
+│       └── QuestionChain.tsx     # 追问链列表
+│
+├── hooks/
+│   └── useInterviewSession.ts    # 模拟面试全部状态和业务逻辑
+│
+├── lib/
+│   ├── ai-client.ts              # 共享 AI 请求工具（requestChatCompletion / parseModelJson）
+│   ├── interview-core.ts         # 面试核心类型、评分函数、基础题库
+│   ├── analysis.ts               # 本地分析函数（AI 不可用时的 fallback）
+│   ├── resume-file.ts            # 浏览器端简历文件解析（txt/md/json/docx）
+│   └── __tests__/                # 单元测试
+│       ├── interview-core.test.ts
+│       ├── resume-file.test.ts
+│       └── analysis.test.ts
+│
+├── data/
+│   └── site.ts                   # 首页静态数据（导航、能力矩阵、工作流等）
+│
+└── types/
+    └── mammoth-browser.d.ts      # mammoth 类型声明
+```
+
+### 关键设计决策
+
+**1. AI 请求走服务端 API Route**
+
+所有 AI 请求通过 Next.js API Route 代理，API Key 存在 `.env.local`，前端不接触密钥。支持任意 OpenAI-compatible 服务（DeepSeek、OpenAI、Mindflow 等）。
+
+**2. 本地函数作为 Fallback**
+
+`analysis.ts` 中的 `buildReview`、`matchJd`、`polishProject` 在 AI Key 未配置时作为降级方案，保证简历诊断、JD 匹配、项目优化页面不依赖 AI 也能展示基础结果。
+
+**3. 面试追问的深度控制**
+
+连贯追问模式下，前端设置 `autoModeMaxDepth = 2` 作为兜底，防止 AI 在同一追问点无限深挖。AI 本身也有 prompt 层面的切题规则（`currentDepth >= 2` 时必须切换），形成双重保障。
+
+**4. 基础题穿插策略**
+
+`interleaveTopics` 函数将 AI 从简历中提取的项目追问点与预置的 11 道前端基础题（HTTP 缓存、事件循环、原型链、CSS 布局等）交叉排列，模拟真实一面的节奏。
+
+**5. 组件拆分策略**
+
+模拟面试页原本是 878 行的单体组件，现在拆为：
+- `useInterviewSession` hook：所有状态（20+ useState）和业务逻辑（API 调用、追问推进、评分管理）
+- `InterviewTrainer`：薄 shell，只负责组装子组件和传递 props
+- 3 个子组件：`ScoreBoard`、`ReviewPanel`、`QuestionChain`，各自独立渲染
+
+## 本地运行
 
 ```bash
 npm install
 npm run dev
 ```
 
+构建和测试：
+
 ```bash
 npm run build
+npm run test
 npm run lint
 ```
 
-## Real AI Setup
+## AI 配置
 
-真实模拟面试必须配置 OpenAI-compatible 模型密钥；未配置密钥时不会使用 Mock 兜底，而是直接提示配置问题，避免生成不真实的面试体验。
-
-如需接入真实模型，新建 `.env.local`：
+新建 `.env.local`，配置任意 OpenAI-compatible 服务：
 
 ```env
+# DeepSeek
+AI_BASE_URL=https://api.deepseek.com/v1
+AI_API_KEY=your_key_here
+AI_MODEL=deepseek-chat
+
+# 或 OpenAI
 AI_BASE_URL=https://api.openai.com/v1
-AI_API_KEY=your_api_key_here
+AI_API_KEY=your_key_here
 AI_MODEL=gpt-4o-mini
 ```
 
-也可以换成任意 OpenAI-compatible 服务，例如 Mindflow：
+**四个 API Route 均依赖此配置**：
 
-```env
-AI_BASE_URL=https://ai.mindflow.com.cn/v1
-AI_API_KEY=your_mindflow_key_here
-AI_MODEL=gpt-5.5
-```
+| 路径 | 功能 | 无 Key 时行为 |
+|---|---|---|
+| `/api/resume-review` | 简历诊断 | 降级为本地正则分析 |
+| `/api/jd-match` | JD 匹配 | 降级为本地关键词匹配 |
+| `/api/project-polish` | 项目优化 | 降级为本地模板改写 |
+| `/api/interview-ai` | 模拟面试（plan/round/review） | 返回 503 错误，不启动面试 |
 
-服务端接口位于 `/api/interview-ai`：
+## 简历文件支持
 
-- `action=plan`：基于真实简历解析项目 / 实习 / 技能追问点，并追加前端岗位高频基础题
-- `action=round`：基于上一轮回答、当前逻辑边界和已覆盖内容生成下一轮真实追问
-- 返回 `trigger / dimension / answerStandard / boundary`，保证追问可解释、可复盘
+| 格式 | 解析方式 |
+|---|---|
+| `.txt` / `.md` | 直接读取文本 |
+| `.json` | JSON.parse 后格式化 |
+| `.docx` | mammoth 浏览器端提取纯文本 |
+| `.pdf` | 暂不支持，建议复制文本粘贴或转为 .docx |
 
-## Deploy
+## 后续迭代方向
 
-推荐部署到 Vercel。配置环境变量后即可使用真实模拟面试；未配置真实 AI Key 时，其他本地分析功能仍可访问，但真实面试不会启动。
+### P2 — 产品体验提升
 
-## Notes
+- **SSE 流式输出**：当前 AI 接口等全部生成完再返回，改为 SSE 逐字输出，提升交互体验
+- **面试历史持久化**：用 localStorage 或 IndexedDB 存储历史面试记录，支持查看过往复盘、对比进步
+- **多页面数据流转**：JD 匹配结果自动带到模拟面试作为上下文，简历诊断发现的短板作为重点追问方向
+- **导出能力**：复盘报告导出 PDF / 下载 Markdown，简历诊断结果一键复制
+- **子页面独立 Metadata**：每个页面独立的 title / description，提升 SEO
 
-当前版本的模拟面试已切换为真实 AI 面试官流程，不再使用硬编码候选人简历或 Mock 接口兜底。
+### P3 — 高阶功能
+
+- **语音模拟面试**：接入 Web Speech API 或 Whisper，语音回答 → 转文字 → AI 追问
+- **Prompt 可观测性**：开发模式下可视化展示每次 AI 请求的 prompt、token 用量、响应时间
+- **多角色面试官**：支持选择不同面试风格（温和型 / 压力型 / 技术深挖型）
+- **移动端 PWA**：manifest.json + Service Worker，支持手机端离线访问本地分析功能
+
+### P4 — 工程化完善
+
+- **CI/CD**：GitHub Actions 自动 lint → type-check → test → build
+- **lint-staged + husky**：提交前自动格式化和 lint
+- **E2E 测试**：Playwright 覆盖核心用户流程
+- **错误边界**：页面级 `error.tsx` + `loading.tsx`
+- **无障碍**：完善 aria-label、键盘导航支持
+
+## 部署
+
+推荐部署到 Vercel。在 Vercel 项目设置中配置环境变量（`AI_BASE_URL` / `AI_API_KEY` / `AI_MODEL`）后即可使用全部 AI 功能。
+
+## 可写入简历的项目描述
+
+> AI Career Studio：基于 Next.js 15 + TypeScript 搭建 AI 求职训练工作台，覆盖 JD 匹配、简历诊断、项目优化和多轮模拟面试追问四大模块；设计结构化 AI 输出协议，将简历解析、岗位基础题穿插、追问链、动态分项评分和个性化复盘拆分为可复用数据模块；通过自定义 Hook 管理面试会话状态，拆分 800+ 行组件为 hook + 子组件架构；接入 DeepSeek / OpenAI-compatible API，实现回答驱动的真实面试流程，27 个单元测试覆盖核心逻辑。
