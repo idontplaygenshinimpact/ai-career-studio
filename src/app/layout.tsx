@@ -19,6 +19,8 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#020617" />
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/icon.svg" />
       </head>
       <body className="min-h-full bg-slate-950 text-slate-100">
         <SiteNav />
