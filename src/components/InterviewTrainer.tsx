@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import {
 	useInterviewSession,
 	type InterviewMode,
@@ -12,6 +13,7 @@ import {
 	interviewerProfiles,
 	type InterviewerRole,
 } from "@/data/interviewer-roles";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 
 const modeOptions: Array<{
 	value: InterviewMode;
@@ -32,6 +34,15 @@ const modeOptions: Array<{
 
 export function InterviewTrainer() {
 	const session = useInterviewSession();
+
+	const handleSpeechTranscript = useCallback(
+		(text: string) => {
+			session.setAnswer((prev: string) => prev + text);
+		},
+		[session],
+	);
+
+	const speech = useSpeechRecognition(handleSpeechTranscript);
 
 	return (
 		<div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
@@ -192,6 +203,30 @@ export function InterviewTrainer() {
 						className="mt-3 min-h-44 w-full resize-none rounded-2xl border border-white/10 bg-black/30 p-4 text-sm leading-7 text-slate-100 outline-none transition-colors placeholder:text-slate-600 focus:border-cyan-300/50"
 						placeholder="按真实面试回答：背景、个人职责、技术取舍、边界情况、验证结果。"
 					/>
+					{speech.isSupported ? (
+						<div className="mt-3 flex items-center gap-3">
+							<button
+								type="button"
+								onClick={speech.isListening ? speech.stop : speech.start}
+								className={`rounded-full px-4 py-2 text-xs font-semibold transition-all ${
+									speech.isListening
+										? "border border-red-300/40 bg-red-300/15 text-red-100 shadow-[0_0_20px_rgba(252,165,165,0.15)]"
+										: "border border-cyan-300/25 bg-cyan-300/10 text-cyan-100 hover:bg-cyan-300/15"
+								}`}
+							>
+								{speech.isListening ? "停止语音" : "语音输入"}
+							</button>
+							{speech.isListening ? (
+								<span className="flex items-center gap-2 text-xs text-red-200">
+									<span className="inline-block h-2 w-2 animate-pulse rounded-full bg-red-400" />
+									正在识别...
+								</span>
+							) : null}
+							{speech.transcript && !speech.isListening ? (
+								<span className="text-xs text-slate-400">语音已转文字</span>
+							) : null}
+						</div>
+					) : null}
 				</div>
 
 				<div className="mt-5 grid gap-3 md:grid-cols-2">
