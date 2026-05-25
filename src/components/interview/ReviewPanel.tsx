@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import type { AnswerScore } from "@/lib/interview-core";
 import type { ReviewResponse, InterviewMode } from "@/hooks/useInterviewSession";
+import { downloadMarkdown, copyToClipboard } from "@/lib/export";
 
 type ReviewPanelProps = {
 	isGeneratingReview: boolean;
@@ -22,6 +24,20 @@ export function ReviewPanel({
 	mode,
 	reportMarkdown,
 }: ReviewPanelProps) {
+	const [copied, setCopied] = useState(false);
+
+	function handleDownload() {
+		downloadMarkdown(reportMarkdown, `interview-report-${Date.now()}.md`);
+	}
+
+	async function handleCopy() {
+		const ok = await copyToClipboard(reportMarkdown);
+		if (ok) {
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		}
+	}
+
 	return (
 		<section className="rounded-[28px] border border-white/10 bg-slate-950/75 p-5">
 			<h2 className="text-lg font-semibold text-white">复盘报告</h2>
@@ -104,6 +120,22 @@ export function ReviewPanel({
 				value={reportMarkdown}
 				className="mt-4 h-36 w-full resize-none rounded-2xl border border-white/10 bg-black/30 p-3 text-xs leading-6 text-slate-300 outline-none"
 			/>
+			<div className="mt-3 flex gap-2">
+				<button
+					type="button"
+					onClick={handleDownload}
+					className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/15"
+				>
+					下载 Markdown
+				</button>
+				<button
+					type="button"
+					onClick={handleCopy}
+					className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+				>
+					{copied ? "已复制" : "复制报告"}
+				</button>
+			</div>
 		</section>
 	);
 }

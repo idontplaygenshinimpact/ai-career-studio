@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { JdMatchResult } from "@/lib/analysis";
+import { copyToClipboard } from "@/lib/export";
+import { saveSharedContext } from "@/lib/storage";
 
 const sampleJd = "前端实习生，熟悉 React / Vue / TypeScript，了解组件化、状态管理、性能优化，有 AI 产品或数据可视化项目经验优先。";
 const sampleResume = "合肥工业大学计算机专业，熟悉 Vue3、React、TypeScript，做过 AI Career Studio、AgentChat 流式对话、ECharts 数据看板等项目。";
@@ -13,6 +15,20 @@ export function JdMatchWorkbench() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<JdMatchResult | null>(null);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  function formatMatchText() {
+    if (!result) return "";
+    return `JD 匹配分析（${result.score}分）\n\n命中关键词：${result.matchedKeywords.join("、")}\n\n缺失项：\n${result.missingKeywords.map(s => `• ${s}`).join("\n")}\n\n改写建议：\n${result.rewriteAdvice.map(s => `• ${s}`).join("\n")}\n\n面试准备方向：\n${result.interviewDirections.map(s => `• ${s}`).join("\n")}`;
+  }
+
+  async function handleCopyResult() {
+    const ok = await copyToClipboard(formatMatchText());
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
 
   async function handleAnalyze() {
     if (jd.trim().length < 10 || resume.trim().length < 10 || isAnalyzing) {
@@ -42,6 +58,7 @@ export function JdMatchWorkbench() {
         rewriteAdvice: data.rewriteAdvice,
         interviewDirections: data.interviewDirections,
       });
+      saveSharedContext({ resumeText: resume, jdText: jd });
     } catch (err) {
       setError(err instanceof Error ? err.message : "JD 匹配分析失败，请重试。");
     } finally {
@@ -117,9 +134,18 @@ export function JdMatchWorkbench() {
               <ul className="mt-3 space-y-2">
                 {result.interviewDirections.map((item) => <li key={item}>• {item}</li>)}
               </ul>
-              <Link href="/mock-interview" className="mt-5 inline-flex rounded-full bg-amber-300 px-5 py-3 text-sm font-semibold text-slate-950">
-                根据匹配结果进入模拟面试
-              </Link>
+              <div className="mt-5 flex gap-3">
+                <Link href="/mock-interview" className="inline-flex rounded-full bg-amber-300 px-5 py-3 text-sm font-semibold text-slate-950">
+                  根据匹配结果进入模拟面试
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleCopyResult}
+                  className="rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                >
+                  {copied ? "已复制" : "复制分析结果"}
+                </button>
+              </div>
             </section>
           </>
         ) : (
