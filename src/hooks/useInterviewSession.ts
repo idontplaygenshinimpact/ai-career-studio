@@ -154,6 +154,7 @@ export function useInterviewSession() {
 	const [aiScores, setAiScores] = useState<(AnswerScore | null)[]>([]);
 	const [reviewData, setReviewData] = useState<ReviewResponse | null>(null);
 	const [isGeneratingReview, setIsGeneratingReview] = useState(false);
+	const [streamingReviewText, setStreamingReviewText] = useState("");
 
 	const round = rounds[activeQuestion];
 	const latestAiScore = aiScores[aiScores.length - 1];
@@ -448,6 +449,7 @@ export function useInterviewSession() {
 
 		setIsCompleted(true);
 		setIsGeneratingReview(true);
+		setStreamingReviewText("");
 
 		try {
 			const reviewRounds = visibleRounds.map((item, index) => ({
@@ -459,16 +461,45 @@ export function useInterviewSession() {
 				dimension: item.dimension,
 			}));
 
-			const response = await requestJson<ReviewResponse>({
-				action: "review",
-				resumeText,
-				position,
-				mode,
-				rounds: reviewRounds,
-				averageScore,
+			const streamResponse = await fetchWithAiHeaders("/api/interview-ai", {
+				method: "POST",
+				body: JSON.stringify({
+					action: "review",
+					stream: true,
+					resumeText,
+					position,
+					mode,
+					rounds: reviewRounds,
+					averageScore,
+				}),
 			});
 
-			setReviewData(response);
+			if (!streamResponse.ok) {
+				throw new Error("复盘报告生成失败。");
+			}
+
+			const reader = streamResponse.body?.getReader();
+			const decoder = new TextDecoder();
+			let fullText = "";
+
+			if (reader) {
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
+					const chunk = decoder.decode(value, { stream: true });
+					fullText += chunk;
+					setStreamingReviewText(fullText);
+				}
+			}
+
+			setReviewData({
+				ok: true,
+				overallComment: fullText,
+				strengths: [],
+				weaknesses: [],
+				nextSteps: [],
+				interviewReadiness: "",
+			});
 
 			saveInterviewRecord({
 				id: `interview-${Date.now()}`,
@@ -478,7 +509,7 @@ export function useInterviewSession() {
 				averageScore,
 				roundCount: visibleRounds.length,
 				reportMarkdown,
-				reviewSummary: response.overallComment || "",
+				reviewSummary: fullText.slice(0, 200),
 			});
 		} catch {
 			setReviewData(null);
@@ -500,6 +531,7 @@ export function useInterviewSession() {
 		setAiScores([]);
 		setReviewData(null);
 		setIsGeneratingReview(false);
+		setStreamingReviewText("");
 		setPlanSummary("尚未基于简历生成面试计划。 ");
 		setErrorMessage("");
 	}
@@ -545,6 +577,7 @@ export function useInterviewSession() {
 		errorMessage,
 		reviewData,
 		isGeneratingReview,
+		streamingReviewText,
 
 		// Derived
 		round,

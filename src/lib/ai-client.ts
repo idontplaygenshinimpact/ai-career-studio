@@ -90,23 +90,24 @@ export async function requestChatCompletion(
 
 export async function requestChatStream(
 	messages: Array<{ role: "system" | "user"; content: string }>,
+	configOverride?: AiConfig,
 ): Promise<ReadableStream<Uint8Array>> {
-	if (!process.env.AI_API_KEY) {
-		throw new Error("未配置 AI_API_KEY，无法调用 AI 服务。");
+	const config = resolveAiConfig(configOverride);
+
+	if (!config.apiKey) {
+		throw new Error("未配置 AI API Key，无法调用流式 AI 服务。");
 	}
 
-	const baseUrl = process.env.AI_BASE_URL || "https://api.openai.com/v1";
-	const model = process.env.AI_MODEL || "gpt-4o-mini";
 	const response = await fetch(
-		`${baseUrl.replace(/\/$/, "")}/chat/completions`,
+		`${config.baseUrl.replace(/\/$/, "")}/chat/completions`,
 		{
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				Authorization: `Bearer ${process.env.AI_API_KEY}`,
+				Authorization: `Bearer ${config.apiKey}`,
 			},
 			body: JSON.stringify({
-				model,
+				model: config.model,
 				temperature: 0.35,
 				stream: true,
 				messages,

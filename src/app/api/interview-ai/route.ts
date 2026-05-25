@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import {
 	requestChatCompletion,
+	requestChatStream,
 	parseModelJson,
 	type AiConfig,
 } from "@/lib/ai-client";
 import { extractAiConfigFromHeaders } from "@/lib/ai-config-header";
+import { checkRateLimit } from "@/lib/rate-limit";
 import {
 	createOpeningRound,
 	frontendFundamentalTopics,
@@ -43,6 +45,7 @@ type ReviewRequest = {
 	resumeText?: string;
 	position?: string;
 	mode?: "practice" | "auto";
+	stream?: boolean;
 	rounds?: Array<{
 		focus: string;
 		question: string;
@@ -69,6 +72,14 @@ export async function POST(request: Request) {
 	}
 
 	const aiConfig = extractAiConfigFromHeaders(request);
+
+	const rateCheck = checkRateLimit(request);
+	if (!rateCheck.allowed) {
+		return NextResponse.json(
+			{ ok: false, error: `请求过于频繁，请 ${Math.ceil(rateCheck.retryAfterMs / 1000)} 秒后重试。` },
+			{ status: 429 },
+		);
+	}
 
 	if (!aiConfig?.apiKey && !process.env.AI_API_KEY) {
 		return NextResponse.json(
@@ -123,33 +134,44 @@ async function handlePlan(body: PlanRequest, aiConfig?: AiConfig) {
 		);
 	}
 
+	const position = body.position || "前端实习生";
+
 	const { content } = await requestChatCompletion([
 		{
 			role: "system",
 			content:
-				`${profile.systemPromptPrefix}\n\n请解析候选人的真实简历，为前端实习/校招一面生成面试追问计划。必须只输出 JSON，不要 Markdown。JSON 字段：summary、topics。topics 是数组，每项包含 id、focus、dimension、question、boundary。必须从简历真实内容抽取项目/实习/经历追问点，不允许编造简历没有的项目；同时说明这些追问点的逻辑边界。计算机基础和前端八股由系统预置并穿插，不需要你重复生成基础题。`,
+				`${profile.systemPromptPrefix}\n\n请解析候选人的真实简历，为"${position}"一面生成面试追问计划。必须只输出 JSON，不要 Markdown。JSON 字段：summary、resumeTopics、fundamentalTopics。resumeTopics 是从简历中抽取的项目/实习/经历追问点数组；fundamentalTopics 是针对"${position}"岗位的 8-12 道高频基础知识题数组。两个数组的每项都包含 id、focus、dimension、question、boundary。resumeTopics 不允许编造简历没有的项目。fundamentalTopics 必须覆盖该岗位最核心的基础知识领域。`,
 		},
 		{
 			role: "user",
 			content: JSON.stringify({
-				position: body.position || "前端实习生",
+				position,
 				resumeText,
 				requiredOutputRules: [
-					"topics 至少包含 3 个来自简历真实项目/实习/经历的追问点，除非简历本身信息不足",
-					"topics 里每个 boundary 必须说明本追问点不能越界到哪里",
+					"resumeTopics 至少包含 3 个来自简历真实项目/实习/经历的追问点，除非简历本身信息不足",
+					"resumeTopics 里每个 boundary 必须说明本追问点不能越界到哪里",
 					"question 必须像真实面试官第一问，而不是简历复述",
 					"不要使用硬编码候选人姓名或预设项目，只能基于 resumeText",
+					`fundamentalTopics 必须针对"${position}"岗位，覆盖该岗位最高频的基础知识领域`,
+					"fundamentalTopics 的 question 必须像真实面试穿插提问，不要出成考试题",
+					"fundamentalTopics 每项的 id 必须以 fundamental- 开头",
 				],
 			}),
 		},
 	], aiConfig);
 
-	const parsed = parseModelJson<{ summary?: unknown; topics?: unknown }>(
+	const parsed = parseModelJson<{ summary?: unknown; resumeTopics?: unknown; fundamentalTopics?: unknown; topics?: unknown }>(
 		content,
 		"真实 AI 没有返回合法的面试计划 JSON，请重试。",
 	);
-	const resumeTopics = normalizeTopics(parsed.topics);
-	const topics = mergeTopics(resumeTopics);
+	const resumeTopics = normalizeTopics(parsed.resumeTopics || parsed.topics);
+	const aiFundamentals = normalizeTopics(parsed.fundamentalTopics).map((t) => ({
+		...t,
+		category: "fundamental" as const,
+		id: t.id.startsWith("fundamental-") ? t.id : `fundamental-${t.id}`,
+	}));
+	const fundamentals = aiFundamentals.length >= 5 ? aiFundamentals : frontendFundamentalTopics;
+	const topics = mergeTopics(resumeTopics, fundamentals);
 	const openingRound = createOpeningRound(topics[0]);
 
 	return NextResponse.json({
@@ -232,11 +254,12 @@ async function handleReview(body: ReviewRequest, aiConfig?: AiConfig) {
 		);
 	}
 
-	const { content } = await requestChatCompletion([
+	const messages: Array<{ role: "system" | "user"; content: string }> = [
 		{
 			role: "system",
-			content:
-				"你是资深前端面试官。请基于候选人的完整面试追问轨迹和回答，生成个性化的面试复盘报告。必须只输出 JSON，不要 Markdown。JSON 字段：overallComment（一段 2-4 句话的总体评价）、strengths（字符串数组，2-4 条具体优势，引用实际回答内容）、weaknesses（字符串数组，2-4 条具体短板，指出哪些回答不够好）、nextSteps（字符串数组，3-5 条可执行的改进建议）、interviewReadiness（字符串，'可投递'|'需打磨'|'建议继续练习'）。",
+			content: body.stream
+				? "你是资深前端面试官。请基于候选人的完整面试追问轨迹和回答，用自然语言生成个性化的面试复盘报告。格式：先写一段总体评价，然后分「强项」「短板」「下一步」三个小节，每节 2-4 条，最后给出面试可投递性判断（可投递/需打磨/建议继续练习）。直接输出纯文本，不要输出 JSON 或 Markdown 代码块。"
+				: "你是资深前端面试官。请基于候选人的完整面试追问轨迹和回答，生成个性化的面试复盘报告。必须只输出 JSON，不要 Markdown。JSON 字段：overallComment（一段 2-4 句话的总体评价）、strengths（字符串数组，2-4 条具体优势，引用实际回答内容）、weaknesses（字符串数组，2-4 条具体短板，指出哪些回答不够好）、nextSteps（字符串数组，3-5 条可执行的改进建议）、interviewReadiness（字符串，'可投递'|'需打磨'|'建议继续练习'）。",
 		},
 		{
 			role: "user",
@@ -253,7 +276,20 @@ async function handleReview(body: ReviewRequest, aiConfig?: AiConfig) {
 				],
 			}),
 		},
-	], aiConfig);
+	];
+
+	if (body.stream) {
+		const stream = await requestChatStream(messages, aiConfig);
+		return new Response(stream, {
+			headers: {
+				"Content-Type": "text/plain; charset=utf-8",
+				"Transfer-Encoding": "chunked",
+				"Cache-Control": "no-cache",
+			},
+		});
+	}
+
+	const { content } = await requestChatCompletion(messages, aiConfig);
 
 	const parsed = parseModelJson<Record<string, unknown>>(
 		content,
@@ -274,14 +310,14 @@ async function handleReview(body: ReviewRequest, aiConfig?: AiConfig) {
 	});
 }
 
-function mergeTopics(resumeTopics: InterviewTopic[]) {
+function mergeTopics(resumeTopics: InterviewTopic[], fundamentalTopics: InterviewTopic[]) {
 	const normalizedResumeTopics = resumeTopics.map((topic) => ({
 		...topic,
 		category: "resume" as const,
 	}));
 	const topics = interleaveTopics(
 		normalizedResumeTopics,
-		frontendFundamentalTopics,
+		fundamentalTopics,
 	);
 	const seen = new Set<string>();
 

@@ -8,8 +8,10 @@ import { downloadMarkdown, copyToClipboard } from "@/lib/export";
 type ReviewPanelProps = {
 	isGeneratingReview: boolean;
 	reviewData: ReviewResponse | null;
+	streamingReviewText: string;
 	currentScore: AnswerScore;
 	latestAiScore: AnswerScore | null | undefined;
+	isAiScore: boolean;
 	fundamentalCount: number;
 	mode: InterviewMode;
 	reportMarkdown: string;
@@ -18,8 +20,10 @@ type ReviewPanelProps = {
 export function ReviewPanel({
 	isGeneratingReview,
 	reviewData,
+	streamingReviewText,
 	currentScore,
 	latestAiScore,
+	isAiScore,
 	fundamentalCount,
 	mode,
 	reportMarkdown,
@@ -42,9 +46,13 @@ export function ReviewPanel({
 		<section className="rounded-[28px] border border-white/10 bg-slate-950/75 p-5">
 			<h2 className="text-lg font-semibold text-white">复盘报告</h2>
 			{isGeneratingReview ? (
-				<p className="mt-4 text-sm leading-7 text-slate-400">
-					AI 正在生成个性化复盘报告...
-				</p>
+				<div className="mt-4">
+					{streamingReviewText ? (
+						<p className="whitespace-pre-wrap text-sm leading-7 text-slate-200">{streamingReviewText}<span className="inline-block h-4 w-1 animate-pulse bg-cyan-300" /></p>
+					) : (
+						<p className="text-sm leading-7 text-slate-400">AI 正在生成个性化复盘报告...</p>
+					)}
+				</div>
 			) : reviewData ? (
 				<div className="mt-4 space-y-4">
 					{reviewData.interviewReadiness ? (
@@ -102,7 +110,15 @@ export function ReviewPanel({
 					<p>• 报告包含针对你实际回答的优势分析、短板诊断和改进建议。</p>
 				</div>
 			)}
-			<div className="mt-4 grid grid-cols-2 gap-2 text-xs text-slate-300">
+			<div className="mt-4 flex items-center gap-2">
+				<span className="text-xs text-slate-400">分项评分</span>
+				{!isAiScore ? (
+					<span className="rounded-full border border-amber-300/20 bg-amber-300/5 px-2 py-0.5 text-[10px] text-amber-200/60">参考分</span>
+				) : (
+					<span className="rounded-full border border-cyan-300/20 bg-cyan-300/5 px-2 py-0.5 text-[10px] text-cyan-200/60">AI 评分</span>
+				)}
+			</div>
+			<div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-300">
 				<span>技术准确性：{currentScore.accuracy}</span>
 				<span>表达结构：{currentScore.structure}</span>
 				<span>项目深度：{currentScore.depth}</span>

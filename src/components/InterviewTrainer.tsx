@@ -335,15 +335,18 @@ export function InterviewTrainer() {
 					averageScore={session.averageScore}
 					isCompleted={session.isCompleted}
 					hasRound={Boolean(session.round)}
+					isAiScore={Boolean(session.latestAiScore)}
 					completedCount={session.completedCount}
 					inquiryDepth={session.inquiryDepth}
 					summary={session.summary}
 				/>
 				<ReviewPanel
 					isGeneratingReview={session.isGeneratingReview}
+					streamingReviewText={session.streamingReviewText}
 					reviewData={session.reviewData}
 					currentScore={session.currentScore}
 					latestAiScore={session.latestAiScore}
+					isAiScore={Boolean(session.latestAiScore)}
 					fundamentalCount={session.fundamentalCount}
 					mode={session.mode}
 					reportMarkdown={session.reportMarkdown}
