@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requestChatCompletion, parseModelJson } from "@/lib/ai-client";
 import { extractAiConfigFromHeaders } from "@/lib/ai-config-header";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { matchJd, type JdMatchResult } from "@/lib/analysis";
 
 export async function POST(request: Request) {
@@ -29,6 +30,14 @@ export async function POST(request: Request) {
 		return NextResponse.json(
 			{ ok: false, error: "请提供至少 10 字的简历内容。" },
 			{ status: 400 },
+		);
+	}
+
+	const rateCheck = checkRateLimit(request);
+	if (!rateCheck.allowed) {
+		return NextResponse.json(
+			{ ok: false, error: `请求过于频繁，请 ${Math.ceil(rateCheck.retryAfterMs / 1000)} 秒后重试。` },
+			{ status: 429 },
 		);
 	}
 
