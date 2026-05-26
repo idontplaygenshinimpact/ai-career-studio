@@ -21,6 +21,20 @@ export const ScoreBoard = memo(function ScoreBoard({
 	summary,
 	isAiScore,
 }: ScoreBoardProps) {
+	if (!hasRound) {
+		return (
+			<section className="rounded-[32px] border border-amber-300/20 bg-amber-300/10 p-6 text-slate-50 shadow-[0_24px_80px_rgba(251,191,36,0.12)]">
+				<p className="text-xs uppercase tracking-[0.3em] text-amber-200/70">
+					Interview Score
+				</p>
+				<div className="mt-3 text-4xl font-black text-amber-100/30">&mdash;</div>
+				<p className="mt-4 text-sm leading-7 text-amber-50/60">
+					上传简历并开始面试后，这里会实时显示评分和追问进度。
+				</p>
+			</section>
+		);
+	}
+
 	return (
 		<section className="rounded-[32px] border border-amber-300/20 bg-amber-300/10 p-6 text-slate-50 shadow-[0_24px_80px_rgba(251,191,36,0.12)]">
 			<div className="flex items-end justify-between gap-4">
@@ -31,20 +45,14 @@ export const ScoreBoard = memo(function ScoreBoard({
 					<div className="mt-2 text-5xl font-black text-amber-100">
 						{averageScore}
 					</div>
-					{!isAiScore && hasRound ? (
+					{!isAiScore ? (
 						<p className="mt-1 text-xs text-amber-200/50">
-							基于关键词的参考评分，提交回答后将由 AI 评分
+							提交回答后将由 AI 评分
 						</p>
 					) : null}
 				</div>
 				<div className="text-right text-sm text-amber-50/80">
-					<p>
-						{isCompleted
-							? "已生成复盘"
-							: hasRound
-								? "逻辑边界内追问"
-								: "等待开始"}
-					</p>
+					<p>{isCompleted ? "已生成复盘" : "面试进行中"}</p>
 					<p>已追问 {completedCount} 次</p>
 				</div>
 			</div>

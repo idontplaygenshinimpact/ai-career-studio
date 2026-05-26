@@ -442,45 +442,41 @@ export function InterviewTrainer() {
 					)}
 				</div>
 
-				<div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm leading-7 text-slate-300">
-					<p className="font-semibold text-white">即时反馈</p>
-					<p className="mt-2">{round?.feedback ?? planSummary}</p>
-				</div>
+				{round ? (
+					<>
+						<div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm leading-7 text-slate-300">
+							<p className="font-semibold text-white">即时反馈</p>
+							<p className="mt-2">{round.feedback}</p>
+						</div>
 
-				<section className="mt-4 rounded-3xl border border-cyan-300/20 bg-cyan-300/[0.08] p-4">
-					<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-						<div>
-							<p className="text-xs uppercase tracking-[0.28em] text-cyan-200/70">
-								Quality Guardrail
-							</p>
-							<h3 className="mt-2 text-lg font-semibold text-white">
-								追问质量校准
-							</h3>
-						</div>
-						<span className="w-fit rounded-full border border-cyan-300/30 bg-slate-950/40 px-3 py-1 text-xs text-cyan-100">
-							不是随机追问
-						</span>
-					</div>
-					<div className="mt-4 grid gap-3 lg:grid-cols-3">
-						<div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3 text-sm leading-6 text-slate-300">
-							<p className="font-semibold text-cyan-100">触发依据</p>
-							<p className="mt-2">{round?.trigger ?? "等待简历解析。"}</p>
-						</div>
-						<div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3 text-sm leading-6 text-slate-300">
-							<p className="font-semibold text-cyan-100">考察维度</p>
-							<p className="mt-2">
-								{round?.dimension ?? "项目/实习/岗位基础能力"}
-							</p>
-						</div>
-						<div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3 text-sm leading-6 text-slate-300">
-							<p className="font-semibold text-cyan-100">合格标准</p>
-							<p className="mt-2">
-							{round?.answerStandard ??
-								"合格回答需要覆盖背景、个人动作、技术选择和验证结果。"}
-							</p>
-						</div>
-					</div>
-				</section>
+						<section className="mt-4 rounded-3xl border border-cyan-300/20 bg-cyan-300/[0.08] p-4">
+							<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+								<div>
+									<p className="text-xs uppercase tracking-[0.28em] text-cyan-200/70">
+										Quality Guardrail
+									</p>
+									<h3 className="mt-2 text-lg font-semibold text-white">
+										追问质量校准
+									</h3>
+								</div>
+							</div>
+							<div className="mt-4 grid gap-3 lg:grid-cols-3">
+								<div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3 text-sm leading-6 text-slate-300">
+									<p className="font-semibold text-cyan-100">触发依据</p>
+									<p className="mt-2">{round.trigger}</p>
+								</div>
+								<div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3 text-sm leading-6 text-slate-300">
+									<p className="font-semibold text-cyan-100">考察维度</p>
+									<p className="mt-2">{round.dimension}</p>
+								</div>
+								<div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3 text-sm leading-6 text-slate-300">
+									<p className="font-semibold text-cyan-100">合格标准</p>
+									<p className="mt-2">{round.answerStandard}</p>
+								</div>
+							</div>
+						</section>
+					</>
+				) : null}
 
 				<div className="mt-6 flex flex-col gap-3 sm:flex-row">
 					<button
@@ -502,30 +498,30 @@ export function InterviewTrainer() {
 						onClick={handleReset}
 						className="rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
 					>
-						重置训练
+						重置
 					</button>
-					{mode === "practice" ? (
-						<button
-							type="button"
-							onClick={handleSwitchTopic}
-							disabled={isAdvancing || isCompleted || topics.length === 0}
-							className="rounded-full border border-cyan-200/25 bg-cyan-200/10 px-5 py-3 text-sm font-semibold text-cyan-100 transition-colors hover:bg-cyan-200/15 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800/40 disabled:text-slate-500"
-						>
-							练习模式：手动切换追问点
-						</button>
-					) : (
-						<span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-5 py-3 text-sm font-semibold text-cyan-100">
-							连贯模式：AI 面试官自动判断切题
-						</span>
-					)}
-					<button
-						type="button"
-						onClick={handleFinishInterview}
-						disabled={isAdvancing || isCompleted || rounds.length === 0}
-						className="rounded-full border border-amber-200/30 bg-amber-200/10 px-5 py-3 text-sm font-semibold text-amber-100 transition-colors hover:bg-amber-200/15 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800/40 disabled:text-slate-500"
-					>
-						结束并生成报告
-					</button>
+					{round ? (
+						<>
+							{mode === "practice" ? (
+								<button
+									type="button"
+									onClick={handleSwitchTopic}
+									disabled={isAdvancing || isCompleted || topics.length === 0}
+									className="rounded-full border border-cyan-200/25 bg-cyan-200/10 px-5 py-3 text-sm font-semibold text-cyan-100 transition-colors hover:bg-cyan-200/15 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800/40 disabled:text-slate-500"
+								>
+									切换追问点
+								</button>
+							) : null}
+							<button
+								type="button"
+								onClick={handleFinishInterview}
+								disabled={isAdvancing || isCompleted || rounds.length === 0}
+								className="rounded-full border border-amber-200/30 bg-amber-200/10 px-5 py-3 text-sm font-semibold text-amber-100 transition-colors hover:bg-amber-200/15 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-800/40 disabled:text-slate-500"
+							>
+								结束并生成报告
+							</button>
+						</>
+					) : null}
 				</div>
 
 			</article>

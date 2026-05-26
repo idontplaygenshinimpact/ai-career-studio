@@ -129,60 +129,67 @@ export const ReviewPanel = memo(function ReviewPanel({
 				</div>
 			) : (
 				<div className="mt-4 space-y-3 text-sm leading-7 text-slate-300">
-					<p>• 完成面试后，AI 将生成个性化复盘报告。</p>
-					<p>• 报告包含针对你实际回答的优势分析、短板诊断和改进建议。</p>
+					<p>完成面试后，AI 将生成个性化复盘报告，包含优势、短板和改进建议。</p>
 				</div>
 			)}
-			<div className="mt-4 flex items-center gap-2">
-				<span className="text-xs text-slate-400">分项评分</span>
-				{!isAiScore ? (
-					<span className="rounded-full border border-amber-300/20 bg-amber-300/5 px-2 py-0.5 text-[10px] text-amber-200/60">参考分</span>
-				) : (
-					<span className="rounded-full border border-cyan-300/20 bg-cyan-300/5 px-2 py-0.5 text-[10px] text-cyan-200/60">AI 评分</span>
-				)}
-			</div>
-			<div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-300">
-				<span>技术准确性：{currentScore.accuracy}</span>
-				<span>表达结构：{currentScore.structure}</span>
-				<span>项目深度：{currentScore.depth}</span>
-				<span>异常边界：{currentScore.riskHandling}</span>
-				<span>基础/八股：{fundamentalCount} 轮</span>
-				<span>{mode === "auto" ? "自动切题" : "手动练习"}</span>
-			</div>
-			{latestAiScore?.comment ? (
-				<p className="mt-3 text-xs leading-5 text-amber-100/80">
-					AI 点评：{latestAiScore.comment}
-				</p>
+			{(reviewData || isGeneratingReview || latestAiScore) ? (
+				<>
+					<div className="mt-4 flex items-center gap-2">
+						<span className="text-xs text-slate-400">分项评分</span>
+						{isAiScore ? (
+							<span className="rounded-full border border-cyan-300/20 bg-cyan-300/5 px-2 py-0.5 text-[10px] text-cyan-200/60">AI 评分</span>
+						) : (
+							<span className="rounded-full border border-amber-300/20 bg-amber-300/5 px-2 py-0.5 text-[10px] text-amber-200/60">参考分</span>
+						)}
+					</div>
+					<div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-300">
+						<span>技术准确性：{currentScore.accuracy}</span>
+						<span>表达结构：{currentScore.structure}</span>
+						<span>项目深度：{currentScore.depth}</span>
+						<span>异常边界：{currentScore.riskHandling}</span>
+						<span>基础/八股：{fundamentalCount} 轮</span>
+						<span>{mode === "auto" ? "自动切题" : "手动练习"}</span>
+					</div>
+					{latestAiScore?.comment ? (
+						<p className="mt-3 text-xs leading-5 text-amber-100/80">
+							AI 点评：{latestAiScore.comment}
+						</p>
+					) : null}
+					{reviewData ? (
+						<>
+							<textarea
+								readOnly
+								value={reportMarkdown}
+								className="mt-4 h-36 w-full resize-none rounded-2xl border border-white/10 bg-black/30 p-3 text-xs leading-6 text-slate-300 outline-none"
+							/>
+							<div className="mt-3 flex flex-wrap gap-2">
+								<button
+									type="button"
+									onClick={handleDownload}
+									className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/15"
+								>
+									下载 Markdown
+								</button>
+								<button
+									type="button"
+									onClick={handleExportPdf}
+									disabled={exportingPdf}
+									className="rounded-full border border-amber-300/25 bg-amber-300/10 px-4 py-2 text-xs font-semibold text-amber-100 transition-colors hover:bg-amber-300/15 disabled:cursor-not-allowed disabled:opacity-50"
+								>
+									{exportingPdf ? "导出中..." : "导出 PDF"}
+								</button>
+								<button
+									type="button"
+									onClick={handleCopy}
+									className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10"
+								>
+									{copied ? "已复制" : "复制报告"}
+								</button>
+							</div>
+						</>
+					) : null}
+				</>
 			) : null}
-			<textarea
-				readOnly
-				value={reportMarkdown}
-				className="mt-4 h-36 w-full resize-none rounded-2xl border border-white/10 bg-black/30 p-3 text-xs leading-6 text-slate-300 outline-none"
-			/>
-			<div className="mt-3 flex gap-2">
-				<button
-					type="button"
-					onClick={handleDownload}
-					className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/15"
-				>
-					下载 Markdown
-				</button>
-				<button
-					type="button"
-					onClick={handleExportPdf}
-					disabled={exportingPdf}
-					className="rounded-full border border-amber-300/25 bg-amber-300/10 px-4 py-2 text-xs font-semibold text-amber-100 transition-colors hover:bg-amber-300/15 disabled:cursor-not-allowed disabled:opacity-50"
-				>
-					{exportingPdf ? "导出中..." : "导出 PDF"}
-				</button>
-				<button
-					type="button"
-					onClick={handleCopy}
-					className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/10"
-				>
-					{copied ? "已复制" : "复制报告"}
-				</button>
-			</div>
 			{reviewData ? (
 				<NextActions
 					title="针对本次面试"

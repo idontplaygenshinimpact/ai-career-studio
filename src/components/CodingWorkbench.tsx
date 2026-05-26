@@ -258,7 +258,7 @@ export function CodingWorkbench() {
 							disabled={isReviewing || !sandboxResult}
 							className="rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
 						>
-							{isReviewing ? "AI 审查中..." : "AI 代码审查"}
+							{isReviewing ? "AI 审查中..." : sandboxResult ? "AI 代码审查" : "先运行测试"}
 						</button>
 						<button
 							type="button"

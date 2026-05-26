@@ -51,7 +51,7 @@ describe("ScoreBoard", () => {
 		expect(screen.getByText(/已生成复盘/)).toBeTruthy();
 	});
 
-	it("shows waiting status when no round", () => {
+	it("shows guide state when no round", () => {
 		render(
 			<ScoreBoard
 				averageScore={0}
@@ -63,7 +63,7 @@ describe("ScoreBoard", () => {
 				summary="等待开始"
 			/>,
 		);
-		expect(screen.getAllByText(/等待开始/).length).toBeGreaterThan(0);
+		expect(screen.getByText(/上传简历并开始面试/)).toBeTruthy();
 	});
 
 	it("renders summary text", () => {
