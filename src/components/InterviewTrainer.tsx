@@ -381,6 +381,13 @@ export function InterviewTrainer() {
 										{codeSandboxResult.error ? ` - ${codeSandboxResult.error}` : ""}
 									</span>
 								) : null}
+								{codeSandboxResult?.perf ? (
+									<span className="text-[10px] text-slate-500">
+										{codeSandboxResult.perf.cpuTimeMs}ms CPU
+										{codeSandboxResult.perf.heapEstimateKB > 0 ? ` · ${Math.round(codeSandboxResult.perf.heapEstimateKB / 1024)}MB` : ""}
+										{codeSandboxResult.perf.timedOut ? " · 超时" : ""}
+									</span>
+								) : null}
 							</div>
 							{codeSandboxResult && codeSandboxResult.tests.length > 0 ? (
 								<div className="mt-3 space-y-1">

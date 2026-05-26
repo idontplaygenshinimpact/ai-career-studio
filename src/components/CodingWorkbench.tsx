@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { codingChallenges, type CodingChallenge, type ChallengeCategory } from "@/data/coding-challenges";
 import { runInSandbox, type SandboxResult } from "@/lib/sandbox";
 import { fetchWithAiHeaders } from "@/lib/fetch-ai";
@@ -69,6 +69,30 @@ export function CodingWorkbench() {
 		() => filter === "all" ? codingChallenges : codingChallenges.filter((c) => c.category === filter),
 		[filter],
 	);
+
+	const [visibleCount, setVisibleCount] = useState(20);
+	const loadMoreRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		setVisibleCount(20);
+	}, [filter]);
+
+	useEffect(() => {
+		const el = loadMoreRef.current;
+		if (!el) return;
+		const observer = new IntersectionObserver(
+			([entry]) => {
+				if (entry.isIntersecting) {
+					setVisibleCount((prev) => Math.min(prev + 20, filteredChallenges.length));
+				}
+			},
+			{ threshold: 0.1 },
+		);
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [filteredChallenges.length]);
+
+	const visibleChallenges = filteredChallenges.slice(0, visibleCount);
 
 	const challenge = codingChallenges.find((c) => c.id === selectedId) as CodingChallenge;
 	const code = codeMap[selectedId] ?? challenge.skeleton;
@@ -164,7 +188,7 @@ export function CodingWorkbench() {
 					))}
 				</div>
 				<div className="flex-1 space-y-2 overflow-y-auto pr-1">
-				{filteredChallenges.map((c, index) => {
+				{visibleChallenges.map((c, index) => {
 					const isActive = c.id === selectedId;
 					return (
 						<button
@@ -190,6 +214,11 @@ export function CodingWorkbench() {
 						</button>
 					);
 				})}
+				{visibleCount < filteredChallenges.length ? (
+					<div ref={loadMoreRef} className="py-2 text-center text-xs text-slate-500">
+						加载更多（{visibleCount}/{filteredChallenges.length}）
+					</div>
+				) : null}
 				</div>
 			</aside>
 
@@ -251,9 +280,23 @@ export function CodingWorkbench() {
 							<h3 className="text-lg font-semibold text-white">
 								{sandboxResult.success ? "全部通过" : "未通过"}
 							</h3>
-							<span className="text-xs text-slate-400">
-								{sandboxResult.duration}ms
-							</span>
+							<div className="flex gap-3 text-xs text-slate-400">
+								<span>{sandboxResult.duration}ms</span>
+								{sandboxResult.perf ? (
+									<>
+										<span>CPU {sandboxResult.perf.cpuTimeMs}ms</span>
+										{sandboxResult.perf.heapEstimateKB > 0 ? (
+											<span>Heap {Math.round(sandboxResult.perf.heapEstimateKB / 1024)}MB</span>
+										) : null}
+										{sandboxResult.perf.timedOut ? (
+											<span className="text-red-300">超时</span>
+										) : null}
+										{sandboxResult.perf.memoryExceeded ? (
+											<span className="text-red-300">内存超限</span>
+										) : null}
+									</>
+								) : null}
+							</div>
 						</div>
 
 						{sandboxResult.error ? (
