@@ -32,7 +32,7 @@ export default function HomePage() {
 							<p className="max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
 								面向前端实习 / 校招场景，集成简历诊断、JD
 								匹配、项目经历优化和模拟面试追问。
-								支持结构化输出、追问链和结果报告，帮助候选人围绕真实材料完成更高质量的求职训练。
+								支持结构化输出、追问链和结果报告，帮助候选人围绕简历材料完成更高质量的求职训练。
 							</p>
 
 							<div className="flex flex-wrap gap-3">

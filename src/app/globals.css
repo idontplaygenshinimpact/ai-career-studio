@@ -13,6 +13,8 @@
 
 html {
   scroll-behavior: smooth;
+  scrollbar-color: rgba(34, 211, 238, 0.5) rgba(15, 23, 42, 0.65);
+  scrollbar-width: thin;
 }
 
 body {
@@ -20,6 +22,25 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: "Trebuchet MS", "Microsoft YaHei", sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.72);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.6), rgba(251, 191, 36, 0.55));
+  border-radius: 999px;
+  border: 2px solid rgba(15, 23, 42, 0.72);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.78), rgba(251, 191, 36, 0.72));
 }
 
 a {

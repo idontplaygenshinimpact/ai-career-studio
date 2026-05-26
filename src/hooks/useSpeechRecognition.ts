@@ -46,11 +46,10 @@ export function useSpeechRecognition(
 ): UseSpeechRecognitionReturn {
 	const [status, setStatus] = useState<SpeechStatus>("idle");
 	const [transcript, setTranscript] = useState("");
+	const [isSupported, setIsSupported] = useState(false);
 	const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 	const onTranscriptRef = useRef(onTranscript);
 	onTranscriptRef.current = onTranscript;
-
-	const isSupported = typeof window !== "undefined" && getSpeechRecognition() !== null;
 
 	const start = useCallback(() => {
 		const SpeechRecognitionClass = getSpeechRecognition();
@@ -111,6 +110,10 @@ export function useSpeechRecognition(
 			recognitionRef.current = null;
 		}
 		setStatus("idle");
+	}, []);
+
+	useEffect(() => {
+		setIsSupported(getSpeechRecognition() !== null);
 	}, []);
 
 	useEffect(() => {
