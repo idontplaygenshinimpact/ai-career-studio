@@ -1,4 +1,4 @@
-export const supportedResumeFormats = [".txt", ".md", ".json", ".docx"];
+export const supportedResumeFormats = [".txt", ".md", ".json", ".docx", ".pdf"];
 
 export type ResumeFileResult = {
   text: string;
@@ -19,7 +19,33 @@ export async function parseResumeFile(file: File): Promise<ResumeFileResult> {
   const extension = getExtension(file.name);
 
   if (extension === ".pdf") {
-    throw new Error("当前 Mock 版本暂不直接解析 PDF。请复制 PDF 文本，或转为 .docx / .txt 后上传。");
+    const pdfjsLib = await import("pdfjs-dist");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    const pages: string[] = [];
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items
+        .map((item) => ("str" in item ? (item as { str: string }).str : ""))
+        .filter(Boolean)
+        .join(" ");
+      pages.push(pageText);
+    }
+
+    const text = pages.join("\n").trim();
+
+    if (!text) {
+      throw new Error("没有从 PDF 中提取到文本。如果是纯图片 PDF，请复制文本后粘贴。");
+    }
+
+    return {
+      text,
+      message: `已解析 PDF 简历：${file.name}（${pdf.numPages} 页）`,
+    };
   }
 
   if (extension === ".doc") {
