@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 type ScoreBoardProps = {
 	averageScore: number;
 	isCompleted: boolean;
@@ -10,7 +12,7 @@ type ScoreBoardProps = {
 	isAiScore: boolean;
 };
 
-export function ScoreBoard({
+export const ScoreBoard = memo(function ScoreBoard({
 	averageScore,
 	isCompleted,
 	hasRound,
@@ -55,4 +57,4 @@ export function ScoreBoard({
 			<p className="mt-5 text-sm leading-7 text-amber-50/90">{summary}</p>
 		</section>
 	);
-}
+});

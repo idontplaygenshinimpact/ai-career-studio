@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import type { AnswerScore } from "@/lib/interview-core";
-import type { ReviewResponse, InterviewMode } from "@/hooks/useInterviewSession";
+import type { ReviewResponse, InterviewMode } from "@/stores/interview-store";
 import { downloadMarkdown, copyToClipboard } from "@/lib/export";
 import { NextActions } from "@/components/NextActions";
 
@@ -18,7 +18,7 @@ type ReviewPanelProps = {
 	reportMarkdown: string;
 };
 
-export function ReviewPanel({
+export const ReviewPanel = memo(function ReviewPanel({
 	isGeneratingReview,
 	reviewData,
 	streamingReviewText,
@@ -184,4 +184,4 @@ export function ReviewPanel({
 			) : null}
 		</section>
 	);
-}
+});

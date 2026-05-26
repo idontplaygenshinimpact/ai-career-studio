@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import type { InterviewRound } from "@/lib/interview-core";
 
 type QuestionChainProps = {
@@ -8,7 +9,7 @@ type QuestionChainProps = {
 	completedCount: number;
 };
 
-export function QuestionChain({
+export const QuestionChain = memo(function QuestionChain({
 	visibleRounds,
 	activeQuestion,
 	completedCount,
@@ -17,7 +18,7 @@ export function QuestionChain({
 		<section className="rounded-[28px] border border-cyan-300/20 bg-cyan-300/10 p-5">
 			<h2 className="text-lg font-semibold text-white">追问链</h2>
 			<p className="mt-2 text-xs leading-5 text-cyan-100/75">
-				追问点来自真实简历解析结果，并穿插目标岗位高频基础知识；连贯模式由
+				追问点来自简历解析结果，并穿插目标岗位高频基础知识；连贯模式由
 				AI 面试官按回答质量、追问深度和逻辑边界自动切题。
 			</p>
 			<div className="mt-4 space-y-3 text-sm text-slate-200">
@@ -53,4 +54,4 @@ export function QuestionChain({
 			</div>
 		</section>
 	);
-}
+});

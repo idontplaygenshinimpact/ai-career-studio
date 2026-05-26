@@ -47,7 +47,7 @@ export type ReviewResponse = {
 const emptyResumeHint =
 	"请粘贴真实简历，或上传 .txt / .md / .json / .docx 文件后开始真实面试。";
 
-const autoModeMaxDepth = 2;
+const autoModeMaxDepth = 3;
 
 function isFundamentalRound(
 	item: Pick<InterviewRound, "category" | "id" | "focus">,
