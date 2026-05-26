@@ -1,8 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-	resumeReviewRequestSchema,
 	jdMatchRequestSchema,
-	projectPolishRequestSchema,
 	interviewAiRequestSchema,
 	codeReviewRequestSchema,
 } from "../validations";
