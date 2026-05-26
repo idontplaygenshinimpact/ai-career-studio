@@ -607,37 +607,57 @@ export const useInterviewStore = create<InterviewStore>()((set, get) => ({
 
 			const averageScore = selectAverageScore(current);
 
-			const streamResponse = await fetchWithAiHeaders(
-				"/api/interview-ai",
-				{
-					method: "POST",
-					body: JSON.stringify({
-						action: "review",
-						stream: true,
-						resumeText: current.resumeText,
-						position: current.position,
-						mode: current.mode,
-						rounds: reviewRounds,
-						averageScore,
-					}),
-				},
-			);
+			const requestBody = {
+				action: "review",
+				stream: true,
+				resumeText: current.resumeText,
+				position: current.position,
+				mode: current.mode,
+				rounds: reviewRounds,
+				averageScore,
+			};
 
-			if (!streamResponse.ok) {
-				throw new Error("复盘报告生成失败。");
-			}
-
-			const reader = streamResponse.body?.getReader();
-			const decoder = new TextDecoder();
 			let fullText = "";
+			let retries = 0;
+			const maxRetries = 2;
 
-			if (reader) {
-				while (true) {
-					const { done, value } = await reader.read();
-					if (done) break;
-					const chunk = decoder.decode(value, { stream: true });
-					fullText += chunk;
-					set({ streamingReviewText: fullText });
+			const readStream = async () => {
+				const streamResponse = await fetchWithAiHeaders(
+					"/api/interview-ai",
+					{
+						method: "POST",
+						body: JSON.stringify(requestBody),
+					},
+				);
+
+				if (!streamResponse.ok) {
+					throw new Error("复盘报告生成失败。");
+				}
+
+				const reader = streamResponse.body?.getReader();
+				const decoder = new TextDecoder();
+
+				if (reader) {
+					while (true) {
+						const { done, value } = await reader.read();
+						if (done) break;
+						const chunk = decoder.decode(value, { stream: true });
+						fullText += chunk;
+						set({ streamingReviewText: fullText });
+					}
+				}
+			};
+
+			while (retries <= maxRetries) {
+				try {
+					await readStream();
+					break;
+				} catch (err) {
+					retries++;
+					if (retries > maxRetries) throw err;
+					const backoff = retries * 1000;
+					set({ streamingReviewText: fullText + `\n\n[网络中断，${backoff / 1000}秒后重试...]` });
+					await new Promise((r) => setTimeout(r, backoff));
 				}
 			}
 
