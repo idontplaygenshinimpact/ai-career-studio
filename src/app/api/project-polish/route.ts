@@ -3,12 +3,13 @@ import { requestChatCompletion, parseModelJson } from "@/lib/ai-client";
 import { extractAiConfigFromHeaders } from "@/lib/ai-config-header";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { polishProject, type ProjectPolishResult } from "@/lib/analysis";
+import { projectPolishRequestSchema } from "@/lib/validations";
 
 export async function POST(request: Request) {
-	let body: { project?: string };
+	let rawBody: unknown;
 
 	try {
-		body = (await request.json()) as { project?: string };
+		rawBody = await request.json();
 	} catch {
 		return NextResponse.json(
 			{ ok: false, error: "请求体不是合法 JSON。" },
@@ -16,14 +17,16 @@ export async function POST(request: Request) {
 		);
 	}
 
-	const project = body.project?.trim();
-
-	if (!project || project.length < 10) {
+	const parsed = projectPolishRequestSchema.safeParse(rawBody);
+	if (!parsed.success) {
+		const firstError = parsed.error.issues[0]?.message || "请求参数校验失败。";
 		return NextResponse.json(
-			{ ok: false, error: "请提供至少 10 字的项目描述。" },
+			{ ok: false, error: firstError },
 			{ status: 400 },
 		);
 	}
+
+	const project = parsed.data.project.trim();
 
 	const rateCheck = checkRateLimit(request);
 	if (!rateCheck.allowed) {

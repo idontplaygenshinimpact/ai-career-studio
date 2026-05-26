@@ -15,56 +15,29 @@ import {
 } from "@/lib/interview-core";
 import {
 	interviewerProfiles,
-	type InterviewerRole,
 } from "@/data/interviewer-roles";
+import {
+	interviewAiRequestSchema,
+	type planRequestSchema,
+	type roundRequestSchema,
+	type reviewRequestSchema,
+} from "@/lib/validations";
+import { codingChallenges } from "@/data/coding-challenges";
+import type { z } from "zod";
 
-type PlanRequest = {
-	resumeText?: string;
-	position?: string;
-	interviewerRole?: InterviewerRole;
-	focusContext?: string;
-};
+const codingChallengeList = codingChallenges
+	.map((c) => `[${c.category}] ${c.title}`)
+	.join("、");
 
-type RoundRequest = {
-	resumeText?: string;
-	position?: string;
-	interviewerRole?: InterviewerRole;
-	mode?: "practice" | "auto";
-	answer?: string;
-	currentRound?: InterviewRound;
-	currentDepth?: number;
-	coveredFocuses?: string[];
-	nextTopic?: InterviewTopic;
-	history?: Array<{
-		focus: string;
-		question: string;
-		answer: string;
-	}>;
-};
-
-type ReviewRequest = {
-	resumeText?: string;
-	position?: string;
-	mode?: "practice" | "auto";
-	stream?: boolean;
-	rounds?: Array<{
-		focus: string;
-		question: string;
-		answer: string;
-		dimension: string;
-	}>;
-	averageScore?: number;
-};
+type PlanRequest = z.infer<typeof planRequestSchema>;
+type RoundRequest = z.infer<typeof roundRequestSchema>;
+type ReviewRequest = z.infer<typeof reviewRequestSchema>;
 
 export async function POST(request: Request) {
-	let body: { action?: string } & (PlanRequest | RoundRequest | ReviewRequest);
+	let rawBody: unknown;
 
 	try {
-		body = (await request.json()) as { action?: string } & (
-			| PlanRequest
-			| RoundRequest
-			| ReviewRequest
-		);
+		rawBody = await request.json();
 	} catch {
 		return NextResponse.json(
 			{ ok: false, error: "请求体不是合法 JSON。" },
@@ -72,6 +45,16 @@ export async function POST(request: Request) {
 		);
 	}
 
+	const parsed = interviewAiRequestSchema.safeParse(rawBody);
+	if (!parsed.success) {
+		const firstError = parsed.error.issues[0]?.message || "请求参数校验失败。";
+		return NextResponse.json(
+			{ ok: false, error: firstError },
+			{ status: 400 },
+		);
+	}
+
+	const body = parsed.data;
 	const aiConfig = extractAiConfigFromHeaders(request);
 
 	const rateCheck = checkRateLimit(request);
@@ -95,15 +78,15 @@ export async function POST(request: Request) {
 
 	try {
 		if (body.action === "plan") {
-			return await handlePlan(body as PlanRequest, aiConfig);
+			return await handlePlan(body, aiConfig);
 		}
 
 		if (body.action === "round") {
-			return await handleRound(body as RoundRequest, aiConfig);
+			return await handleRound(body, aiConfig);
 		}
 
 		if (body.action === "review") {
-			return await handleReview(body as ReviewRequest, aiConfig);
+			return await handleReview(body, aiConfig);
 		}
 	} catch (error) {
 		return NextResponse.json(
@@ -125,16 +108,8 @@ export async function POST(request: Request) {
 }
 
 async function handlePlan(body: PlanRequest, aiConfig?: AiConfig) {
-	const resumeText = body.resumeText?.trim();
+	const resumeText = body.resumeText.trim();
 	const profile = interviewerProfiles[body.interviewerRole || "gentle"];
-
-	if (!resumeText) {
-		return NextResponse.json(
-			{ ok: false, error: "请先上传或粘贴真实简历内容。" },
-			{ status: 400 },
-		);
-	}
-
 	const position = body.position || "前端实习生";
 
 	const { content } = await requestChatCompletion([
@@ -157,6 +132,7 @@ async function handlePlan(body: PlanRequest, aiConfig?: AiConfig) {
 					`fundamentalTopics 必须针对"${position}"岗位，覆盖该岗位最高频的基础知识领域`,
 					"fundamentalTopics 的 question 必须像真实面试穿插提问，不要出成考试题",
 					"fundamentalTopics 每项的 id 必须以 fundamental- 开头",
+					`fundamentalTopics 中应包含 2-3 道手写/算法题，从以下题库中选择：${codingChallengeList}。手写题的 question 应要求候选人说明实现思路和关键步骤`,
 					body.focusContext ? `用户特别要求重点追问以下方向，请在 resumeTopics 和 fundamentalTopics 中优先覆盖：${body.focusContext}` : "",
 				].filter(Boolean),
 			}),
@@ -190,13 +166,6 @@ async function handlePlan(body: PlanRequest, aiConfig?: AiConfig) {
 }
 
 async function handleRound(body: RoundRequest, aiConfig?: AiConfig) {
-	if (!body.resumeText?.trim() || !body.currentRound) {
-		return NextResponse.json(
-			{ ok: false, error: "缺少简历内容或当前追问轮次。" },
-			{ status: 400 },
-		);
-	}
-
 	const profile = interviewerProfiles[body.interviewerRole || "gentle"];
 
 	const { content } = await requestChatCompletion([
@@ -217,14 +186,16 @@ async function handleRound(body: RoundRequest, aiConfig?: AiConfig) {
 				coveredFocuses: body.coveredFocuses ?? [],
 				nextTopicIfDone: body.nextTopic,
 				history: body.history ?? [],
-				rules: [
+					rules: [
 					"trigger 必须说明追问依据来自回答或简历的哪个具体点",
 					"answerStandard 必须说明合格回答的 3-5 个关键点",
-					"基础八股和计算机基础必须像真实一面一样穿插；如果 nextTopicIfDone 是基础题且当前项目点已经追问充分，应主动切换",
-					"连贯追问模式下，不要无限深挖同一个 focus。currentDepth=0 可以继续追问；currentDepth=1 时如果回答已覆盖关键实现、异常边界或验证方式，应切换；currentDepth>=2 时除非回答明显空泛，否则必须切换到 nextTopicIfDone",
-					"切换逻辑边界：回答已达到 answerStandard、继续追问会重复、继续追问会越过 boundary、或需要按一面节奏穿插基础题时，都应 shouldSwitchFocus=true",
+					"真实一面节奏分三个阶段：(1)先集中拷打实习/项目经历，每个话题方向深挖 2-3 轮，拷打完一个方向再换下一个方向；(2)项目拷打结束后集中问 4-5 轮基础八股（HTTP、事件循环、原型链、CSS、闭包等）；(3)穿插 1-2 道手写题思路（如防抖实现、Promise.all 怎么写）再继续八股",
+					"同一个 focus 方向内的追问都算同一'问'的深挖，切换到新 focus 才算新的一'问'",
+					"面试官可以从简历中自行挑选最有价值的技术点追问，围绕候选人回答中暴露的薄弱点继续深挖",
+					`手写题和算法题必须从以下题库中选择，不要自行编造题目。可用题库：${codingChallengeList}。出手写/算法题时，question 中说明题目名称和核心要求即可，候选人可以在手写练习页完成实际编码`,
+					"currentDepth>=2 时除非回答明显空泛，否则必须 shouldSwitchFocus=true 切换到 nextTopicIfDone",
 					"shouldSwitchFocus=true 时，focus/question/dimension/boundary 必须切换到 nextTopicIfDone",
-					"练习模式可以更耐心地围绕当前点追问；连贯追问模式必须更像真实面试官控制节奏",
+					"连贯追问模式必须像真实面试官控制节奏，不能让候选人主导方向",
 					"answerScore.total 必须等于 accuracy+structure+depth+riskHandling+reviewMindset 之和（允许±2 误差），不要随意给高分",
 					"answerScore.comment 用一句话指出回答的核心优缺点",
 				],
@@ -250,13 +221,6 @@ async function handleRound(body: RoundRequest, aiConfig?: AiConfig) {
 }
 
 async function handleReview(body: ReviewRequest, aiConfig?: AiConfig) {
-	if (!body.rounds || body.rounds.length === 0) {
-		return NextResponse.json(
-			{ ok: false, error: "没有面试记录可供复盘。" },
-			{ status: 400 },
-		);
-	}
-
 	const messages: Array<{ role: "system" | "user"; content: string }> = [
 		{
 			role: "system",

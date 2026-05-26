@@ -3,12 +3,13 @@ import { requestChatCompletion, parseModelJson } from "@/lib/ai-client";
 import { extractAiConfigFromHeaders } from "@/lib/ai-config-header";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { buildReview, type ReviewResult } from "@/lib/analysis";
+import { resumeReviewRequestSchema } from "@/lib/validations";
 
 export async function POST(request: Request) {
-	let body: { resume?: string };
+	let rawBody: unknown;
 
 	try {
-		body = (await request.json()) as { resume?: string };
+		rawBody = await request.json();
 	} catch {
 		return NextResponse.json(
 			{ ok: false, error: "请求体不是合法 JSON。" },
@@ -16,14 +17,16 @@ export async function POST(request: Request) {
 		);
 	}
 
-	const resume = body.resume?.trim();
-
-	if (!resume || resume.length < 20) {
+	const parsed = resumeReviewRequestSchema.safeParse(rawBody);
+	if (!parsed.success) {
+		const firstError = parsed.error.issues[0]?.message || "请求参数校验失败。";
 		return NextResponse.json(
-			{ ok: false, error: "请提供至少 20 字的简历内容。" },
+			{ ok: false, error: firstError },
 			{ status: 400 },
 		);
 	}
+
+	const resume = parsed.data.resume.trim();
 
 	const rateCheck = checkRateLimit(request);
 	if (!rateCheck.allowed) {

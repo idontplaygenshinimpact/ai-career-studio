@@ -3,12 +3,13 @@ import { requestChatCompletion, parseModelJson } from "@/lib/ai-client";
 import { extractAiConfigFromHeaders } from "@/lib/ai-config-header";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { matchJd, type JdMatchResult } from "@/lib/analysis";
+import { jdMatchRequestSchema } from "@/lib/validations";
 
 export async function POST(request: Request) {
-	let body: { jd?: string; resume?: string };
+	let rawBody: unknown;
 
 	try {
-		body = (await request.json()) as { jd?: string; resume?: string };
+		rawBody = await request.json();
 	} catch {
 		return NextResponse.json(
 			{ ok: false, error: "请求体不是合法 JSON。" },
@@ -16,22 +17,17 @@ export async function POST(request: Request) {
 		);
 	}
 
-	const jd = body.jd?.trim();
-	const resume = body.resume?.trim();
-
-	if (!jd || jd.length < 10) {
+	const parsed = jdMatchRequestSchema.safeParse(rawBody);
+	if (!parsed.success) {
+		const firstError = parsed.error.issues[0]?.message || "请求参数校验失败。";
 		return NextResponse.json(
-			{ ok: false, error: "请提供至少 10 字的岗位 JD。" },
+			{ ok: false, error: firstError },
 			{ status: 400 },
 		);
 	}
 
-	if (!resume || resume.length < 10) {
-		return NextResponse.json(
-			{ ok: false, error: "请提供至少 10 字的简历内容。" },
-			{ status: 400 },
-		);
-	}
+	const jd = parsed.data.jd.trim();
+	const resume = parsed.data.resume.trim();
 
 	const rateCheck = checkRateLimit(request);
 	if (!rateCheck.allowed) {
