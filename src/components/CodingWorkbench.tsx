@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { codingChallenges, type CodingChallenge, type ChallengeCategory } from "@/data/coding-challenges";
 import { runInSandbox, type SandboxResult } from "@/lib/sandbox";
 import { fetchWithAiHeaders } from "@/lib/fetch-ai";
@@ -19,16 +19,46 @@ type CodeReviewResult = {
 const difficultyLabels = ["", "\u2605", "\u2605\u2605", "\u2605\u2605\u2605"];
 const frequencyLabels = ["", "\ud83d\udd25", "\ud83d\udd25\ud83d\udd25", "\ud83d\udd25\ud83d\udd25\ud83d\udd25"];
 
+const STORAGE_KEY = "acs_coding_code_map";
+
+function loadCodeMap(): Record<string, string> {
+	const base: Record<string, string> = {};
+	for (const c of codingChallenges) {
+		base[c.id] = c.skeleton;
+	}
+	if (typeof window === "undefined") return base;
+	try {
+		const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") as Record<string, string>;
+		for (const [k, v] of Object.entries(saved)) {
+			if (typeof v === "string" && v.trim().length > 0) {
+				base[k] = v;
+			}
+		}
+	} catch { /* ignore */ }
+	return base;
+}
+
+function saveCodeMap(map: Record<string, string>) {
+	if (typeof window === "undefined") return;
+	const toSave: Record<string, string> = {};
+	for (const c of codingChallenges) {
+		if (map[c.id] && map[c.id] !== c.skeleton) {
+			toSave[c.id] = map[c.id];
+		}
+	}
+	try {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+	} catch { /* quota exceeded */ }
+}
+
 export function CodingWorkbench() {
 	const [filter, setFilter] = useState<ChallengeCategory | "all">("all");
 	const [selectedId, setSelectedId] = useState(codingChallenges[0].id);
-	const [codeMap, setCodeMap] = useState<Record<string, string>>(() => {
-		const map: Record<string, string> = {};
-		for (const c of codingChallenges) {
-			map[c.id] = c.skeleton;
-		}
-		return map;
-	});
+	const [codeMap, setCodeMap] = useState<Record<string, string>>(loadCodeMap);
+
+	useEffect(() => {
+		saveCodeMap(codeMap);
+	}, [codeMap]);
 	const [sandboxResult, setSandboxResult] = useState<SandboxResult | null>(null);
 	const [isRunning, setIsRunning] = useState(false);
 	const [reviewResult, setReviewResult] = useState<CodeReviewResult | null>(null);
