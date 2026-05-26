@@ -1,9 +1,9 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo, useRef, useState } from "react";
 import type { AnswerScore } from "@/lib/interview-core";
 import type { ReviewResponse, InterviewMode } from "@/stores/interview-store";
-import { downloadMarkdown, copyToClipboard } from "@/lib/export";
+import { downloadMarkdown, copyToClipboard, downloadPdf } from "@/lib/export";
 import { NextActions } from "@/components/NextActions";
 
 type ReviewPanelProps = {
@@ -30,6 +30,8 @@ export const ReviewPanel = memo(function ReviewPanel({
 	reportMarkdown,
 }: ReviewPanelProps) {
 	const [copied, setCopied] = useState(false);
+	const [exportingPdf, setExportingPdf] = useState(false);
+	const sectionRef = useRef<HTMLElement>(null);
 
 	function handleDownload() {
 		downloadMarkdown(reportMarkdown, `interview-report-${Date.now()}.md`);
@@ -43,8 +45,18 @@ export const ReviewPanel = memo(function ReviewPanel({
 		}
 	}
 
+	async function handleExportPdf() {
+		if (!sectionRef.current) return;
+		setExportingPdf(true);
+		try {
+			await downloadPdf(sectionRef.current, `interview-report-${Date.now()}.pdf`);
+		} finally {
+			setExportingPdf(false);
+		}
+	}
+
 	return (
-		<section className="rounded-[28px] border border-white/10 bg-slate-950/75 p-5">
+		<section ref={sectionRef} className="rounded-[28px] border border-white/10 bg-slate-950/75 p-5">
 			<h2 className="text-lg font-semibold text-white">复盘报告</h2>
 			{isGeneratingReview ? (
 				<div className="mt-4">
@@ -154,6 +166,14 @@ export const ReviewPanel = memo(function ReviewPanel({
 					className="rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/15"
 				>
 					下载 Markdown
+				</button>
+				<button
+					type="button"
+					onClick={handleExportPdf}
+					disabled={exportingPdf}
+					className="rounded-full border border-amber-300/25 bg-amber-300/10 px-4 py-2 text-xs font-semibold text-amber-100 transition-colors hover:bg-amber-300/15 disabled:cursor-not-allowed disabled:opacity-50"
+				>
+					{exportingPdf ? "导出中..." : "导出 PDF"}
 				</button>
 				<button
 					type="button"
