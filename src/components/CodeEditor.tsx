@@ -8,6 +8,34 @@ import { oneDark } from "@codemirror/theme-one-dark";
 import { basicSetup } from "codemirror";
 import { indentWithTab } from "@codemirror/commands";
 import { autocompletion, closeBrackets } from "@codemirror/autocomplete";
+import { linter, type Diagnostic } from "@codemirror/lint";
+
+const jsLinter = linter((view) => {
+	const code = view.state.doc.toString();
+	const diagnostics: Diagnostic[] = [];
+
+	try {
+		new Function(code);
+	} catch (err) {
+		if (err instanceof SyntaxError) {
+			const match = err.message.match(/^(.*?)(?:\s*\((\d+):(\d+)\))?$/);
+			const message = match?.[1] || err.message;
+			const line = match?.[2] ? parseInt(match[2], 10) - 1 : 0;
+			const col = match?.[3] ? parseInt(match[3], 10) - 1 : 0;
+			const lineObj = view.state.doc.line(Math.min(Math.max(line + 1, 1), view.state.doc.lines));
+			const from = lineObj.from + Math.min(col, lineObj.length);
+
+			diagnostics.push({
+				from,
+				to: Math.min(from + 1, lineObj.to),
+				severity: "error",
+				message,
+			});
+		}
+	}
+
+	return diagnostics;
+});
 
 type CodeEditorProps = {
 	value: string;
@@ -34,6 +62,7 @@ export function CodeEditor({ value, onChange, readOnly = false }: CodeEditorProp
 				oneDark,
 				closeBrackets(),
 				autocompletion({ activateOnTyping: true }),
+				jsLinter,
 				keymap.of([indentWithTab]),
 				EditorView.updateListener.of((update) => {
 					if (update.docChanged) {
