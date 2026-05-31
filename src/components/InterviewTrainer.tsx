@@ -23,13 +23,14 @@ import { supportedResumeFormats } from "@/lib/resume-file";
 import { ScoreBoard } from "@/components/interview/ScoreBoard";
 import { ReviewPanel } from "@/components/interview/ReviewPanel";
 import { QuestionChain } from "@/components/interview/QuestionChain";
+import { InterviewStagePanel } from "@/components/interview/InterviewStagePanel";
 import {
 	interviewerProfiles,
 	type InterviewerRole,
 } from "@/data/interviewer-roles";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { codingChallenges, type CodingChallenge } from "@/data/coding-challenges";
-import { CodeEditor } from "@/components/CodeEditor";
+import { DynamicCodeEditor } from "@/components/DynamicCodeEditor";
 import { runInSandbox, type SandboxResult } from "@/lib/sandbox";
 
 function matchCodingChallenge(question: string): CodingChallenge | null {
@@ -68,7 +69,6 @@ export function InterviewTrainer() {
 		fileStatus,
 		isParsingFile,
 		isPreparing,
-		planSummary,
 		topics,
 		topicDepth,
 		answer,
@@ -124,7 +124,6 @@ export function InterviewTrainer() {
 			rounds: s.rounds,
 			mode: s.mode,
 			position: s.position,
-			planSummary: s.planSummary,
 			topicDepth: s.topicDepth,
 		})),
 	);
@@ -362,7 +361,7 @@ export function InterviewTrainer() {
 					{codeMode && matchedChallenge ? (
 						<>
 							<div className="mt-3">
-								<CodeEditor value={codeValue} onChange={setCodeValue} />
+								<DynamicCodeEditor value={codeValue} onChange={setCodeValue} />
 							</div>
 							<div className="mt-3 flex flex-wrap items-center gap-3">
 								<button
@@ -527,6 +526,22 @@ export function InterviewTrainer() {
 			</article>
 
 			<aside className="space-y-5">
+				<InterviewStagePanel
+					mode={mode}
+					isPreparing={isPreparing}
+					isAdvancing={isAdvancing}
+					isGeneratingReview={isGeneratingReview}
+					isCompleted={isCompleted}
+					hasRound={Boolean(round)}
+					hasError={Boolean(errorMessage)}
+					topicsCount={topics.length}
+					roundsCount={rounds.length}
+					completedCount={completedCount}
+					topicDepth={topicDepth}
+					fundamentalCount={fundamentalCount}
+					generatedFundamentalCount={generatedFundamentalCount}
+					hasCodingPrompt={Boolean(matchedChallenge)}
+				/>
 				<ScoreBoard
 					averageScore={averageScore}
 					isCompleted={isCompleted}

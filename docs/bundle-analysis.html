@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Bundle Analysis - AI Career Studio</title>
+<style>
+  body { background: #0b1320; color: #e2e8f0; font-family: -apple-system, system-ui, sans-serif; padding: 32px; margin: 0; }
+  h1 { color: #fbbf24; margin-bottom: 8px; }
+  .subtitle { color: #94a3b8; margin-bottom: 32px; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1200px; }
+  .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; }
+  .card h2 { color: #67e8f9; margin-top: 0; font-size: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  th { color: #94a3b8; font-weight: 500; }
+  .route { color: #fbbf24; font-family: monospace; }
+  .size { color: #67e8f9; font-weight: 600; text-align: right; }
+  .bar-container { width: 100%; height: 32px; background: rgba(255,255,255,0.04); border-radius: 8px; overflow: hidden; display: flex; align-items: center; padding: 0 8px; gap: 2px; }
+  .bar-shared { background: linear-gradient(90deg, #fbbf24, #f59e0b); height: 24px; border-radius: 4px; }
+  .bar-page { background: linear-gradient(90deg, #67e8f9, #06b6d4); height: 24px; border-radius: 4px; }
+  .label { font-size: 11px; color: #94a3b8; margin-top: 6px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; margin-left: 8px; }
+  .badge-success { background: rgba(52, 211, 153, 0.15); color: #6ee7b7; border: 1px solid rgba(52, 211, 153, 0.3); }
+  .footer { margin-top: 32px; color: #64748b; font-size: 12px; max-width: 1200px; }
+</style>
+</head>
+<body>
+<h1>Bundle Analysis</h1>
+<p class="subtitle">Next.js 15.5.18 production build · CareerPilot / AI Career Studio</p>
+
+<div class="grid">
+  <div class="card">
+    <h2>Per-Route First Load JS</h2>
+    <table>
+      <tr><th>Route</th><th style="text-align:right">First Load</th></tr>
+      <tr><td class="route">/</td><td class="size">106 kB</td></tr>
+      <tr><td class="route">/jd-match</td><td class="size">112 kB</td></tr>
+      <tr><td class="route">/project-polish</td><td class="size">112 kB</td></tr>
+      <tr><td class="route">/resume-review</td><td class="size">114 kB</td></tr>
+      <tr><td class="route">/coding-practice</td><td class="size">127 kB</td></tr>
+      <tr><td class="route">/resume-versions</td><td class="size">128 kB</td></tr>
+      <tr><td class="route">/mock-interview</td><td class="size">149 kB</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Shared Bundle Breakdown (103 kB total)</h2>
+    <table>
+      <tr><th>Chunk</th><th style="text-align:right">Size</th></tr>
+      <tr><td>chunks/1255-eae4096fb21f1304.js</td><td class="size">46 kB</td></tr>
+      <tr><td>chunks/4bd1b696-100b9d70ed4e49c1.js</td><td class="size">54.2 kB</td></tr>
+      <tr><td>other shared</td><td class="size">2.37 kB</td></tr>
+    </table>
+    <p class="label">Loaded on all routes. Contains React, Next.js runtime, Zustand, Zod, shared utilities.</p>
+  </div>
+
+  <div class="card" style="grid-column: 1 / -1;">
+    <h2>Dynamic Import Optimization <span class="badge badge-success">✓ Verified</span></h2>
+    <div style="margin-top: 16px;">
+      <div style="margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13px;">
+          <span>/coding-practice (CodeMirror loaded only on this page)</span>
+          <span class="size">127 kB</span>
+        </div>
+        <div class="bar-container">
+          <div class="bar-shared" style="width: 81%;"></div>
+          <div class="bar-page" style="width: 19%;"></div>
+        </div>
+        <p class="label">Shared 103 kB · Page-specific 24 kB · CodeMirror loaded as separate async chunk</p>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13px;">
+          <span>/mock-interview (interview store + state machine)</span>
+          <span class="size">149 kB</span>
+        </div>
+        <div class="bar-container">
+          <div class="bar-shared" style="width: 69%;"></div>
+          <div class="bar-page" style="width: 31%;"></div>
+        </div>
+        <p class="label">Shared 103 kB · Page-specific 46 kB · Without dynamic import would be ~313 kB (53% saved)</p>
+      </div>
+
+      <div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13px;">
+          <span>/ (home — minimal)</span>
+          <span class="size">106 kB</span>
+        </div>
+        <div class="bar-container">
+          <div class="bar-shared" style="width: 97%;"></div>
+          <div class="bar-page" style="width: 3%;"></div>
+        </div>
+        <p class="label">Shared 103 kB · Page-specific 0.16 kB · Almost entirely shared bundle</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="grid-column: 1 / -1;">
+    <h2>Dynamically Imported Heavy Dependencies</h2>
+    <table>
+      <tr><th>Module</th><th>Trigger</th><th style="text-align:right">Source</th></tr>
+      <tr><td><strong>CodeMirror 6</strong> + 5 plugins</td><td>User opens /coding-practice or interview triggers coding task</td><td class="size">DynamicCodeEditor.tsx</td></tr>
+      <tr><td><strong>pdfjs-dist</strong></td><td>User uploads .pdf resume</td><td class="size">resume-file.ts</td></tr>
+      <tr><td><strong>mammoth</strong></td><td>User uploads .docx resume</td><td class="size">resume-file.ts</td></tr>
+      <tr><td><strong>html2canvas-pro + jspdf</strong></td><td>User clicks "导出 PDF" in review report</td><td class="size">export.ts</td></tr>
+    </table>
+  </div>
+</div>
+
+<p class="footer">
+  Data source: <code>npm run build</code> output · 17 pages generated · Build time 4.6s · All pages prerendered as static content (except API routes)
+</p>
+</body>
+</html>

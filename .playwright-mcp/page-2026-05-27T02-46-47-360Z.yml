@@ -1,0 +1,225 @@
+- generic [active] [ref=e1]:
+  - navigation "主导航" [ref=e2]:
+    - generic [ref=e3]:
+      - link "AI CAREER STUDIO 求职训练作战室" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: AI
+        - generic [ref=e6]:
+          - generic [ref=e7]: CAREER STUDIO
+          - generic [ref=e8]: 求职训练作战室
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - link "首页" [ref=e11] [cursor=pointer]:
+            - /url: /
+          - link "JD 匹配" [ref=e12] [cursor=pointer]:
+            - /url: /jd-match
+          - link "简历诊断" [ref=e13] [cursor=pointer]:
+            - /url: /resume-review
+          - link "项目优化" [ref=e14] [cursor=pointer]:
+            - /url: /project-polish
+          - link "模拟面试" [ref=e15] [cursor=pointer]:
+            - /url: /mock-interview
+          - link "手写练习" [ref=e16] [cursor=pointer]:
+            - /url: /coding-practice
+          - link "简历版本" [ref=e17] [cursor=pointer]:
+            - /url: /resume-versions
+        - button "设置 API Key" [ref=e18] [cursor=pointer]
+  - main [ref=e28]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - paragraph [ref=e31]: Real Interview
+        - heading "模拟面试追问" [level=1] [ref=e32]
+        - paragraph [ref=e33]: 上传或粘贴简历后，系统会先解析项目、实习和技能线索，再由 AI 面试官围绕项目、基础、工程化和边界情况不断深挖。
+      - generic [ref=e34]:
+        - article [ref=e35]:
+          - generic [ref=e36]:
+            - button "练习模式 允许手动切换追问点，适合慢慢打磨 STAR 表达。" [ref=e37] [cursor=pointer]:
+              - generic [ref=e38]: 练习模式
+              - generic [ref=e40]: 允许手动切换追问点，适合慢慢打磨 STAR 表达。
+            - button "连贯追问模式 由 AI 面试官主导深挖、切题和基础题穿插。" [ref=e41] [cursor=pointer]:
+              - generic [ref=e42]: 连贯追问模式
+              - generic [ref=e44]: 由 AI 面试官主导深挖、切题和基础题穿插。
+          - generic [ref=e45]:
+            - button "温和引导型 耐心引导，给予充分思考时间，适合首次模拟面试。" [ref=e46] [cursor=pointer]:
+              - generic [ref=e47]: 温和引导型
+              - generic [ref=e49]: 耐心引导，给予充分思考时间，适合首次模拟面试。
+            - button "压力追问型 节奏快、追问紧，模拟大厂真实高压面试。" [ref=e50] [cursor=pointer]:
+              - generic [ref=e51]: 压力追问型
+              - generic [ref=e53]: 节奏快、追问紧，模拟大厂真实高压面试。
+            - button "技术深挖型 围绕技术细节不断深挖，考察底层理解。" [ref=e54] [cursor=pointer]:
+              - generic [ref=e55]: 技术深挖型
+              - generic [ref=e57]: 围绕技术细节不断深挖，考察底层理解。
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - generic [ref=e60]:
+                - text: 简历内容
+                - paragraph [ref=e61]: 支持格式：.txt / .md / .json / .docx / .pdf。
+              - generic "上传简历文件" [ref=e62] [cursor=pointer]:
+                - text: 上传简历文件
+                - button "上传简历文件" [ref=e63]
+            - textbox "简历内容" [ref=e64]:
+              - /placeholder: 粘贴简历内容，或上传文件后开始面试。
+              - text: 文瑞翔 前端工程师 ｜ 男 · 21岁 · 本科在读 ｜ 19213287749 ｜ 920232776@qq.com 211 计算机本科 AI 数据公司实习 Vue3 / React / TypeScript SSE / 工程化 / 数据可视化 个人总结 合肥工业大学计算机科学与技术专业大三在读，具备 Vue3 / React / TypeScript 前端开发经验，熟悉中后台权限路由、状态管理、SSE 流式响应、数据可视化与工程化配置。目前在 AI 数据公司实习，参与 img2code 数据生产链路及标注工具相关开发，关注 AI 应用前端、数据平台与工程效率提升。 实习经历 杭州曼孚科技有限公司（MindFlow）｜前端开发实习生 20XX.XX - 至今 • 参与 img2code 数据生产项目，理解网页采集、静态渲染截图、代码清洗、样本质检到训练数据输出的完整流程 • 参与数据标注与质检工具前端模块开发，围绕样本预览、代码比对、状态流转、异常标记完成交互与接口联调 • 编写数据清洗、格式转换与质量校验脚本，处理字段缺失、资源路径异常、样本格式不一致等问题，降低人工检查成本 • 参与前端工具链维护与工程化脚本编写，关注重复流程自动化、异常样本快速定位和数据处理链路稳定性 • 沉淀常见异常处理规则，提升样本处理流程的可复用性和问题排查效率 • 高频使用 Claude / GPT / OpenCode 辅助调研、问题定位与重构，并对业务逻辑和代码变更进行人工校验 专业技能 前端基础：TypeScript / JavaScript、ES6+、Promise、事件循环、闭包、原型链 Vue / React：Vue3 Composition API、Vue Router、Pinia；React Hooks、Redux Toolkit、React Router 工程化：Vite、TS strict、ESLint flat config、Prettier、路径别名、自动导入、按需加载 网络鉴权：Axios 拦截器、JWT、Token 持久化、路由守卫、SSE 流式响应 样式可视化：Flex / Grid、SCSS / Less、Element Plus、ECharts 动态图表 AI / 协作：Claude / GPT / OpenCode 辅助开发、Git 分支管理、commit 规范 项目经历 AgentChat 智能对话平台｜Vue 3.4 + TypeScript + Vite + Pinia + Element Plus 个人 Demo · 前端独立开发 • 项目规模：31 个 Vue 组件、15 个 API 服务模块、4 个 Pinia Store、20+ 页面路由；后端涉及 FastAPI、LangChain、MySQL、Redis、ChromaDB • SSE 流式对话：基于 @microsoft/fetch-event-source 实现流式响应，通过会话维度维护消息追加状态，支持多会话切换下的实时输出展示 • 状态管理与鉴权：使用 Pinia 拆分认证、会话、历史消息、Agent 配置等模块，结合持久化插件和路由守卫实现登录态与页面级权限控制 • Markdown / 看板：集成 Markdown 渲染、代码高亮、配置编辑与实时预览；基于 ECharts 支持按 Agent、模型、时间范围筛选调用次数与 Token 消耗 • 接口封装：按业务域拆分 API 服务模块，统一处理请求参数、响应结构和错误状态，降低页面组件与后端接口的耦合 • 工程化：使用 auto-import 与 components 插件实现 Vue / Element Plus API 和组件自动导入，减少重复 import 并提升维护效率 • 模块组织：按 API 服务层、状态层、页面层和通用组件层拆分目录结构，降低对话、Agent 配置、统计看板等模块之间的耦合 仿网易云音乐｜React 18 + TypeScript + Vite + Redux Toolkit + Less 独立开发 • 状态架构：使用 Redux Toolkit 管理当前曲目、播放列表、播放状态、进度、模式和音量，并封装类型化 Hooks 提升类型安全 • 播放控制：基于 HTML5 Audio API 封装播放/暂停、上下曲、进度拖拽、音量调节，通过事件监听同步 UI 状态 • 体验优化：结合 React Router Outlet 使底部播放栏常驻，避免路由切换导致播放中断；使用 React.lazy + Suspense 进行代码分割 • 播放模式：支持顺序、随机、单曲循环；随机播放使用 Fisher-Yates 洗牌算法生成随机播放序列，保证随机且覆盖完整列表 仿东方甄选电商平台｜Vue3 + TypeScript + Vite + Pinia + Sass 独立开发 · 可替换项目 • 业务页面：完成首页、商品列表、商品详情、购物车等页面开发，基于 Flex / Grid 和 Sass 变量体系适配桌面端和平板端展示 • 组件抽象：实现路由懒加载、Pinia 状态管理、商品卡片、筛选栏、主题切换等组件/组合式函数封装，减少重复逻辑 教育背景 合肥工业大学（211）｜计算机科学与技术 · 本科 2023.09 - 2027.06
+            - generic [ref=e65]:
+              - textbox "目标岗位，例如：前端实习生" [ref=e66]: 前端实习生
+              - generic [ref=e67]:
+                - paragraph [ref=e68]: 已从简历诊断 / JD 匹配页自动加载简历内容。
+                - paragraph [ref=e69]: 当前字数：2287
+              - button "解析简历并开始" [ref=e70] [cursor=pointer]
+          - generic [ref=e71]:
+            - generic [ref=e72]:
+              - paragraph [ref=e73]: 当前追问点 · 等待简历解析
+              - heading "上传或粘贴简历后，AI 会先解析项目/实习/技能线索，再开始一面追问。" [level=2] [ref=e74]
+            - generic [ref=e75]: 当前点已追问 0 次
+          - generic [ref=e76]:
+            - generic [ref=e77]: AI 驱动追问
+            - generic [ref=e78]: 基础/八股已生成 0 轮，已回答 0 轮
+          - generic [ref=e79]:
+            - generic [ref=e81]: 我的回答
+            - textbox "我的回答" [ref=e82]:
+              - /placeholder: 按面试要求回答：背景、个人职责、技术取舍、边界情况、验证结果。
+            - button "开始语音输入" [ref=e84] [cursor=pointer]: 语音输入
+          - generic [ref=e85]:
+            - button "提交回答，继续追问" [disabled] [ref=e86]
+            - button "重置" [ref=e87] [cursor=pointer]
+        - complementary [ref=e88]:
+          - generic [ref=e89]:
+            - generic [ref=e90]:
+              - generic [ref=e91]:
+                - paragraph [ref=e92]: State Machine
+                - heading "面试流程状态机" [level=3] [ref=e93]
+              - generic [ref=e94]: AI 自动切题
+            - generic [ref=e95]:
+              - generic [ref=e97]:
+                - generic [ref=e100]:
+                  - paragraph [ref=e101]: 1. 简历输入
+                  - paragraph [ref=e102]: 等待 40+ 字真实简历
+                - generic [ref=e103]: 进行中
+              - generic [ref=e105]:
+                - generic [ref=e108]:
+                  - paragraph [ref=e109]: 2. AI 规划
+                  - paragraph [ref=e110]: plan action 生成追问图谱
+                - generic [ref=e111]: 等待
+              - generic [ref=e113]:
+                - generic [ref=e116]:
+                  - paragraph [ref=e117]: 3. 动态追问
+                  - paragraph [ref=e118]: round action 按回答推进
+                - generic [ref=e119]: 等待
+              - generic [ref=e121]:
+                - generic [ref=e124]:
+                  - paragraph [ref=e125]: 4. 手写穿插
+                  - paragraph [ref=e126]: 基础/手写覆盖 0/0
+                - generic [ref=e127]: 等待
+              - generic [ref=e129]:
+                - generic [ref=e132]:
+                  - paragraph [ref=e133]: 5. 流式复盘
+                  - paragraph [ref=e134]: review action 汇总面试轨迹
+                - generic [ref=e135]: 等待
+            - generic [ref=e136]:
+              - generic [ref=e137]:
+                - paragraph [ref=e138]: 当前深挖
+                - paragraph [ref=e139]: "0"
+              - generic [ref=e140]:
+                - paragraph [ref=e141]: 追问节点
+                - paragraph [ref=e142]: "0"
+              - generic [ref=e143]:
+                - paragraph [ref=e144]: 回答轮次
+                - paragraph [ref=e145]: "0"
+          - generic [ref=e146]:
+            - paragraph [ref=e147]: Interview Score
+            - generic [ref=e148]: —
+            - paragraph [ref=e149]: 上传简历并开始面试后，这里会实时显示评分和追问进度。
+          - generic [ref=e150]:
+            - heading "复盘报告" [level=2] [ref=e151]
+            - paragraph [ref=e153]: 完成面试后，AI 将生成个性化复盘报告，包含优势、短板和改进建议。
+          - generic [ref=e154]:
+            - heading "追问链" [level=2] [ref=e155]
+            - paragraph [ref=e156]: 追问点来自简历解析结果，并穿插目标岗位高频基础知识；连贯模式由 AI 面试官按回答质量、追问深度和逻辑边界自动切题。
+            - paragraph [ref=e158]: 尚未生成追问链。
+      - generic [ref=e159]:
+        - generic [ref=e161]:
+          - paragraph [ref=e162]: Training Dashboard
+          - heading "训练数据看板" [level=3] [ref=e163]
+        - generic [ref=e164]:
+          - generic [ref=e165]:
+            - paragraph [ref=e166]: 模拟面试
+            - paragraph [ref=e167]: 2次
+          - generic [ref=e168]:
+            - paragraph [ref=e169]: 手写提交
+            - paragraph [ref=e170]: 0次
+          - generic [ref=e171]:
+            - paragraph [ref=e172]: 通过率
+            - paragraph [ref=e173]: 0%
+          - generic [ref=e174]:
+            - paragraph [ref=e175]: 题目覆盖
+            - paragraph [ref=e176]: 0题
+          - generic [ref=e177]:
+            - paragraph [ref=e178]: 收藏题目
+            - paragraph [ref=e179]: 0题
+          - generic [ref=e180]:
+            - paragraph [ref=e181]: 平均 CPU
+            - paragraph [ref=e182]: 0ms
+          - generic [ref=e183]:
+            - paragraph [ref=e184]: 简历版本
+            - paragraph [ref=e185]: 0个
+        - generic [ref=e186]:
+          - paragraph [ref=e187]: 最近面试能力画像
+          - img "能力雷达图" [ref=e188]:
+            - generic [ref=e197]: 准确性
+            - generic [ref=e198]: 结构
+            - generic [ref=e199]: 深度
+            - generic [ref=e200]: 边界
+            - generic [ref=e201]: 复盘
+      - generic [ref=e202]:
+        - generic [ref=e203]:
+          - generic [ref=e204]:
+            - paragraph [ref=e205]: 进步追踪
+            - paragraph [ref=e206]: 2 次面试记录
+          - generic [ref=e207]:
+            - text: "-51"
+            - paragraph [ref=e208]: 72 → 21
+        - img "面试分数趋势图" [ref=e209]:
+          - generic [ref=e211]: "0"
+          - generic [ref=e213]: "25"
+          - generic [ref=e215]: "50"
+          - generic [ref=e217]: "75"
+          - generic [ref=e219]: "100"
+          - generic [ref=e223]: 5/25
+          - generic [ref=e224]: 5/26
+        - generic [ref=e225]:
+          - paragraph [ref=e226]: 各维度变化（首次 → 最近）
+          - generic [ref=e227]:
+            - generic [ref=e228]:
+              - paragraph [ref=e229]: 准确性
+              - paragraph [ref=e231]: "-20"
+            - generic [ref=e232]:
+              - paragraph [ref=e233]: 结构
+              - paragraph [ref=e235]: "-18"
+            - generic [ref=e236]:
+              - paragraph [ref=e237]: 深度
+              - paragraph [ref=e239]: "-15"
+            - generic [ref=e240]:
+              - paragraph [ref=e241]: 边界
+              - paragraph [ref=e243]: "-12"
+            - generic [ref=e244]:
+              - paragraph [ref=e245]: 复盘
+              - paragraph [ref=e247]: "-7"
+      - generic [ref=e248]:
+        - heading "历史面试记录（2）" [level=2] [ref=e249]
+        - paragraph [ref=e250]: 面试结束后自动保存，最多保留 20 条。
+        - generic [ref=e251]:
+          - button "21 前端实习生 · 连贯追问 2026-05-26 09:49 · 20 轮追问 展开" [ref=e254] [cursor=pointer]:
+            - generic [ref=e255]: "21"
+            - generic [ref=e256]:
+              - paragraph [ref=e257]: 前端实习生 · 连贯追问
+              - paragraph [ref=e258]: 2026-05-26 09:49 · 20 轮追问
+            - generic [ref=e259]: 展开
+          - button "72 前端实习生 · 连贯追问 2026-05-25 20:07 · 2 轮追问 展开" [ref=e262] [cursor=pointer]:
+            - generic [ref=e263]: "72"
+            - generic [ref=e264]:
+              - paragraph [ref=e265]: 前端实习生 · 连贯追问
+              - paragraph [ref=e266]: 2026-05-25 20:07 · 2 轮追问
+            - generic [ref=e267]: 展开
+  - button "Open Next.js Dev Tools" [ref=e273] [cursor=pointer]:
+    - img [ref=e274]
+  - alert [ref=e277]

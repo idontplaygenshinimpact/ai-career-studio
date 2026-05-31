@@ -15,6 +15,7 @@ import {
 	clearNextActions,
 } from "@/lib/storage";
 import { fetchWithAiHeaders } from "@/lib/fetch-ai";
+import { saveResumeVersion } from "@/lib/resume-versions";
 import type { InterviewerRole } from "@/data/interviewer-roles";
 
 // ---------------------------------------------------------------------------
@@ -693,6 +694,20 @@ export const useInterviewStore = create<InterviewStore>()((set, get) => ({
 					reviewMindset: currentScore.reviewMindset,
 				},
 			});
+
+			if (afterReview.resumeText.trim().length >= 40) {
+				const weaknesses = fullText.match(/短板[：:]\s*(.+?)(?:\n|$)/g) || [];
+				saveResumeVersion({
+					text: afterReview.resumeText,
+					source: "mock-interview",
+					scores: { interviewAvg: selectAverageScore(afterReview) },
+					suggestions: weaknesses.slice(0, 5).map((w) => ({
+						source: "mock-interview" as const,
+						content: w.replace(/短板[：:]\s*/, "").trim(),
+						priority: "medium" as const,
+					})),
+				});
+			}
 		} catch {
 			set({ reviewData: null });
 		} finally {

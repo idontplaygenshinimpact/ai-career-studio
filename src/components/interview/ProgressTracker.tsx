@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { loadInterviewHistory, type InterviewRecord } from "@/lib/storage";
+import { DIMENSION_LABELS } from "@/data/dimensions";
 
 const CHART_WIDTH = 400;
 const CHART_HEIGHT = 160;
@@ -25,14 +26,6 @@ function buildPolyline(records: InterviewRecord[]): string {
 		})
 		.join(" ");
 }
-
-const DIMENSION_LABELS: Array<{ key: keyof NonNullable<InterviewRecord["dimensions"]>; label: string; max: number }> = [
-	{ key: "accuracy", label: "准确性", max: 30 },
-	{ key: "structure", label: "结构", max: 25 },
-	{ key: "depth", label: "深度", max: 25 },
-	{ key: "riskHandling", label: "边界", max: 20 },
-	{ key: "reviewMindset", label: "复盘", max: 15 },
-];
 
 export function ProgressTracker() {
 	const [records, setRecords] = useState<InterviewRecord[]>([]);

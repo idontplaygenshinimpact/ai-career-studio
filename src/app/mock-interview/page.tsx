@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { InterviewTrainer } from "@/components/InterviewTrainer";
 import { InterviewHistory } from "@/components/interview/InterviewHistory";
 import { ProgressTracker } from "@/components/interview/ProgressTracker";
+import { TrainingDashboard } from "@/components/TrainingDashboard";
 
 export const metadata: Metadata = {
   title: "模拟面试 - AI Career Studio",
@@ -21,6 +22,7 @@ export default function MockInterviewPage() {
         </header>
 
         <InterviewTrainer />
+        <TrainingDashboard />
         <ProgressTracker />
         <InterviewHistory />
       </section>

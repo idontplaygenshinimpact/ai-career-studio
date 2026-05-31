@@ -5,7 +5,8 @@ import { useState } from "react";
 import type { JdMatchResult } from "@/lib/analysis";
 import { copyToClipboard } from "@/lib/export";
 import { saveSharedContext, saveNextActions } from "@/lib/storage";
-import { fetchWithAiHeaders } from "@/lib/fetch-ai";
+import { useAiRequest } from "@/hooks/useAiRequest";
+import { saveResumeVersion } from "@/lib/resume-versions";
 import { NextActions } from "@/components/NextActions";
 
 const sampleJd = "前端实习生，熟悉 React / Vue / TypeScript，了解组件化、状态管理、性能优化，有 AI 产品或数据可视化项目经验优先。";
@@ -14,10 +15,9 @@ const sampleResume = "合肥工业大学计算机专业，熟悉 Vue3、React、
 export function JdMatchWorkbench() {
   const [jd, setJd] = useState(sampleJd);
   const [resume, setResume] = useState(sampleResume);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<JdMatchResult | null>(null);
-  const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const ai = useAiRequest();
 
   function formatMatchText() {
     if (!result) return "";
@@ -33,53 +33,67 @@ export function JdMatchWorkbench() {
   }
 
   async function handleAnalyze() {
-    if (jd.trim().length < 10 || resume.trim().length < 10 || isAnalyzing) {
+    if (jd.trim().length < 10 || resume.trim().length < 10 || ai.isLoading) {
       return;
     }
 
-    setIsAnalyzing(true);
-    setError("");
+    const response = await ai.run("/api/jd-match", {
+      method: "POST",
+      timeoutMs: 30_000,
+      retries: 1,
+      status: "AI 匹配分析中...",
+      body: JSON.stringify({ jd, resume }),
+    });
 
-    try {
-      const response = await fetchWithAiHeaders("/api/jd-match", {
-        method: "POST",
-        body: JSON.stringify({ jd, resume }),
-      });
+    if (!response) return;
+    const data = await response.json() as JdMatchResult & { ok?: boolean; error?: string };
 
-      const data = await response.json() as JdMatchResult & { ok?: boolean; error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error || "JD 匹配请求失败。");
-      }
-
-      setResult({
-        score: data.score,
-        matchedKeywords: data.matchedKeywords,
-        missingKeywords: data.missingKeywords,
-        rewriteAdvice: data.rewriteAdvice,
-        interviewDirections: data.interviewDirections,
-      });
-      saveSharedContext({ resumeText: resume, jdText: jd });
-
-      const actions = [];
-      if (data.missingKeywords && data.missingKeywords.length > 0) {
-        actions.push({
-          type: "interview-focus" as const,
-          label: `去模拟面试重点练缺失方向`,
-          context: `重点追问候选人在以下方向的能力：${data.missingKeywords.join("、")}`,
-        });
-      }
-      actions.push({
-        type: "polish-project" as const,
-        label: "去优化项目描述提高匹配度",
-        context: jd,
-      });
-      saveNextActions(actions);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "JD 匹配分析失败，请重试。");
-    } finally {
-      setIsAnalyzing(false);
+    if (!response.ok) {
+      ai.setError(data.error || "JD 匹配请求失败。");
+      return;
     }
+
+    setResult({
+      score: data.score,
+      matchedKeywords: data.matchedKeywords,
+      missingKeywords: data.missingKeywords,
+      rewriteAdvice: data.rewriteAdvice,
+      interviewDirections: data.interviewDirections,
+    });
+    saveSharedContext({ resumeText: resume, jdText: jd });
+
+    saveResumeVersion({
+      text: resume,
+      source: "jd-match",
+      scores: { jdMatch: data.score },
+      suggestions: [
+        ...data.missingKeywords.map((kw: string) => ({
+          source: "jd-match" as const,
+          content: `缺失关键词：${kw}`,
+          priority: "high" as const,
+        })),
+        ...data.rewriteAdvice.map((advice: string) => ({
+          source: "jd-match" as const,
+          content: advice,
+          priority: "medium" as const,
+        })),
+      ],
+    });
+
+    const actions = [];
+    if (data.missingKeywords && data.missingKeywords.length > 0) {
+      actions.push({
+        type: "interview-focus" as const,
+        label: `去模拟面试重点练缺失方向`,
+        context: `重点追问候选人在以下方向的能力：${data.missingKeywords.join("、")}`,
+      });
+    }
+    actions.push({
+      type: "polish-project" as const,
+      label: "去优化项目描述提高匹配度",
+      context: jd,
+    });
+    saveNextActions(actions);
   }
 
   return (
@@ -106,15 +120,15 @@ export function JdMatchWorkbench() {
         <button
           type="button"
           onClick={handleAnalyze}
-          disabled={jd.trim().length < 10 || resume.trim().length < 10 || isAnalyzing}
+          disabled={jd.trim().length < 10 || resume.trim().length < 10 || ai.isLoading}
           className="rounded-full bg-amber-300 px-6 py-3 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400 disabled:hover:translate-y-0"
         >
-          {isAnalyzing ? "AI 分析中..." : "开始 AI 匹配分析"}
+          {ai.isLoading ? "AI 分析中..." : "开始 AI 匹配分析"}
         </button>
 
-        {error ? (
+        {ai.error ? (
           <div className="rounded-2xl border border-red-300/25 bg-red-300/10 p-3 text-sm leading-6 text-red-100">
-            {error}
+            {ai.error}
           </div>
         ) : null}
       </section>

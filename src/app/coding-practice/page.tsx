@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CodingWorkbenchLazy } from "@/components/CodingWorkbenchLazy";
+import { TrainingDashboard } from "@/components/TrainingDashboard";
 
 export const metadata: Metadata = {
 	title: "手写练习 - AI Career Studio",
@@ -21,6 +22,7 @@ export default function CodingPracticePage() {
 				</header>
 
 				<CodingWorkbenchLazy />
+				<TrainingDashboard />
 			</section>
 		</main>
 	);

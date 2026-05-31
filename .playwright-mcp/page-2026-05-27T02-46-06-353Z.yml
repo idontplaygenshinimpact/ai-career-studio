@@ -1,0 +1,27 @@
+- generic [active] [ref=e1]:
+  - navigation "主导航" [ref=e2]:
+    - generic [ref=e3]:
+      - link "AI CAREER STUDIO 求职训练作战室" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: AI
+        - generic [ref=e6]:
+          - generic [ref=e7]: CAREER STUDIO
+          - generic [ref=e8]: 求职训练作战室
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - link "首页" [ref=e11] [cursor=pointer]:
+            - /url: /
+          - link "JD 匹配" [ref=e12] [cursor=pointer]:
+            - /url: /jd-match
+          - link "简历诊断" [ref=e13] [cursor=pointer]:
+            - /url: /resume-review
+          - link "项目优化" [ref=e14] [cursor=pointer]:
+            - /url: /project-polish
+          - link "模拟面试" [ref=e15] [cursor=pointer]:
+            - /url: /mock-interview
+          - link "手写练习" [ref=e16] [cursor=pointer]:
+            - /url: /coding-practice
+          - link "简历版本" [ref=e17] [cursor=pointer]:
+            - /url: /resume-versions
+        - button "设置 API Key" [ref=e18] [cursor=pointer]
+  - main [ref=e19]

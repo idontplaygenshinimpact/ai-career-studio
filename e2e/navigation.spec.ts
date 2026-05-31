@@ -40,7 +40,7 @@ test.describe("页面导航", () => {
 		await page.goto("/");
 		await page.click("text=模拟面试");
 		await expect(page).toHaveURL("/mock-interview");
-		await expect(page.locator("h1")).toContainText("真实模拟面试");
+		await expect(page.locator("h1")).toContainText("模拟面试追问");
 	});
 });
 

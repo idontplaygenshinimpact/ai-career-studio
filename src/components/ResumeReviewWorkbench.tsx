@@ -6,7 +6,8 @@ import type { ReviewResult } from "@/lib/analysis";
 import { parseResumeFile, supportedResumeFormats } from "@/lib/resume-file";
 import { copyToClipboard } from "@/lib/export";
 import { saveSharedContext, saveNextActions } from "@/lib/storage";
-import { fetchWithAiHeaders } from "@/lib/fetch-ai";
+import { useAiRequest } from "@/hooks/useAiRequest";
+import { saveResumeVersion } from "@/lib/resume-versions";
 import { useTypewriterList } from "@/hooks/useTypewriter";
 import { NextActions } from "@/components/NextActions";
 
@@ -16,10 +17,9 @@ export function ResumeReviewWorkbench() {
   const [resume, setResume] = useState(sampleResume);
   const [fileStatus, setFileStatus] = useState("支持粘贴文本，也支持上传 .txt / .md / .json / .docx 简历文件。");
   const [isParsing, setIsParsing] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [review, setReview] = useState<ReviewResult | null>(null);
-  const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const ai = useAiRequest();
 
   const animatedStrengths = useTypewriterList(review?.strengths || []);
   const animatedRisks = useTypewriterList(review?.risks || []);
@@ -61,49 +61,63 @@ export function ResumeReviewWorkbench() {
   }
 
   async function handleAnalyze() {
-    if (resume.trim().length < 20 || isAnalyzing) {
+    if (resume.trim().length < 20 || ai.isLoading) {
       return;
     }
 
-    setIsAnalyzing(true);
-    setError("");
+    const response = await ai.run("/api/resume-review", {
+      method: "POST",
+      timeoutMs: 30_000,
+      retries: 1,
+      status: "AI 诊断中...",
+      body: JSON.stringify({ resume }),
+    });
 
-    try {
-      const response = await fetchWithAiHeaders("/api/resume-review", {
-        method: "POST",
-        body: JSON.stringify({ resume }),
-      });
+    if (!response) return;
+    const data = await response.json() as ReviewResult & { ok?: boolean; error?: string };
 
-      const data = await response.json() as ReviewResult & { ok?: boolean; error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error || "简历诊断请求失败。");
-      }
-
-      setReview({
-        score: data.score,
-        strengths: data.strengths,
-        risks: data.risks,
-        suggestions: data.suggestions,
-      });
-      saveSharedContext({ resumeText: resume });
-      saveNextActions([
-        {
-          type: "polish-project",
-          label: "去优化项目描述",
-          context: resume.slice(0, 200),
-        },
-        {
-          type: "interview-focus",
-          label: "用这份简历开始模拟面试",
-          context: "",
-        },
-      ]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "简历诊断失败，请重试。");
-    } finally {
-      setIsAnalyzing(false);
+    if (!response.ok) {
+      ai.setError(data.error || "简历诊断请求失败。");
+      return;
     }
+
+    setReview({
+      score: data.score,
+      strengths: data.strengths,
+      risks: data.risks,
+      suggestions: data.suggestions,
+    });
+    saveSharedContext({ resumeText: resume });
+
+    saveResumeVersion({
+      text: resume,
+      source: "resume-review",
+      scores: { resumeReview: data.score },
+      suggestions: [
+        ...data.risks.map((risk: string) => ({
+          source: "resume-review" as const,
+          content: risk,
+          priority: "high" as const,
+        })),
+        ...data.suggestions.map((s: string) => ({
+          source: "resume-review" as const,
+          content: s,
+          priority: "medium" as const,
+        })),
+      ],
+    });
+    saveNextActions([
+      {
+        type: "polish-project",
+        label: "去优化项目描述",
+        context: resume.slice(0, 200),
+      },
+      {
+        type: "interview-focus",
+        label: "用这份简历开始模拟面试",
+        context: "",
+      },
+    ]);
   }
 
   return (
@@ -138,15 +152,15 @@ export function ResumeReviewWorkbench() {
         <button
           type="button"
           onClick={handleAnalyze}
-          disabled={resume.trim().length < 20 || isAnalyzing}
+          disabled={resume.trim().length < 20 || ai.isLoading}
           className="mt-4 rounded-full bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400 disabled:hover:translate-y-0"
         >
-          {isAnalyzing ? "AI 分析中..." : "开始 AI 诊断"}
+          {ai.isLoading ? "AI 分析中..." : "开始 AI 诊断"}
         </button>
 
-        {error ? (
+        {ai.error ? (
           <div className="mt-3 rounded-2xl border border-red-300/25 bg-red-300/10 p-3 text-sm leading-6 text-red-100">
-            {error}
+            {ai.error}
           </div>
         ) : null}
       </article>

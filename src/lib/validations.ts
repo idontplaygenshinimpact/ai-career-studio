@@ -89,4 +89,8 @@ export const codeReviewRequestSchema = z.object({
 	testsPassed: z.boolean(),
 	testsTotal: z.number().int().min(0),
 	testsPassedCount: z.number().int().min(0),
+	failedTests: z.array(z.string()).optional(),
+	consoleLogs: z.array(z.string()).optional(),
+	customTestCode: z.string().optional(),
+	reviewMode: z.enum(["full", "explain-failure"]).optional(),
 });

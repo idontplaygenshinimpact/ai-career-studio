@@ -48,7 +48,9 @@ export async function POST(request: Request) {
 			{
 				role: "system",
 				content:
-					"你是资深前端面试官，正在审查候选人的手写代码实现。请从正确性、边界处理、时间/空间复杂度、代码风格四个维度评估。必须只输出 JSON，不要 Markdown。JSON 字段：correctness（0-30，正确性）、edgeCases（0-25，边界处理）、complexity（0-25，复杂度分析）、codeStyle（0-20，代码风格）、total（0-100，总分）、comment（一段 2-4 句话的总体点评）、suggestions（字符串数组，2-4 条具体改进建议）。",
+					body.reviewMode === "explain-failure"
+						? "你是资深前端面试官，正在讲解候选人手写题失败用例。请优先解释失败原因、定位可能的问题代码、给出修复方向。必须只输出 JSON，不要 Markdown。JSON 字段：correctness（0-30，正确性）、edgeCases（0-25，边界处理）、complexity（0-25，复杂度分析）、codeStyle（0-20，代码风格）、total（0-100，总分）、comment（一段 2-4 句话解释失败原因）、suggestions（字符串数组，2-4 条具体修复建议）。"
+						: "你是资深前端面试官，正在审查候选人的手写代码实现。请从正确性、边界处理、时间/空间复杂度、代码风格四个维度评估。必须只输出 JSON，不要 Markdown。JSON 字段：correctness（0-30，正确性）、edgeCases（0-25，边界处理）、complexity（0-25，复杂度分析）、codeStyle（0-20，代码风格）、total（0-100，总分）、comment（一段 2-4 句话的总体点评）、suggestions（字符串数组，2-4 条具体改进建议）。",
 			},
 			{
 				role: "user",
@@ -59,10 +61,15 @@ export async function POST(request: Request) {
 					testsPassed: body.testsPassed,
 					testsTotal: body.testsTotal,
 					testsPassedCount: body.testsPassedCount,
+					failedTests: body.failedTests ?? [],
+					consoleLogs: body.consoleLogs ?? [],
+					customTestCode: body.customTestCode || undefined,
+					reviewMode: body.reviewMode || "full",
 					rules: [
 						"评分必须基于代码实际质量，通过测试不代表代码完美",
 						"suggestions 必须是具体的代码改进建议，不要泛泛而谈",
 						"如果代码有明显 bug 但恰好通过了测试，correctness 应扣分并在 comment 中说明",
+						"如果 failedTests 或 consoleLogs 不为空，必须结合失败用例解释问题",
 						"complexity 分析应指出时间和空间复杂度",
 					],
 				}),

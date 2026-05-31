@@ -1,0 +1,238 @@
+- generic [active] [ref=e1]:
+  - navigation "主导航" [ref=e2]:
+    - generic [ref=e3]:
+      - link "AI CAREER STUDIO 求职训练作战室" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: AI
+        - generic [ref=e6]:
+          - generic [ref=e7]: CAREER STUDIO
+          - generic [ref=e8]: 求职训练作战室
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - link "首页" [ref=e11] [cursor=pointer]:
+            - /url: /
+          - link "JD 匹配" [ref=e12] [cursor=pointer]:
+            - /url: /jd-match
+          - link "简历诊断" [ref=e13] [cursor=pointer]:
+            - /url: /resume-review
+          - link "项目优化" [ref=e14] [cursor=pointer]:
+            - /url: /project-polish
+          - link "模拟面试" [ref=e15] [cursor=pointer]:
+            - /url: /mock-interview
+          - link "手写练习" [ref=e16] [cursor=pointer]:
+            - /url: /coding-practice
+          - link "简历版本" [ref=e17] [cursor=pointer]:
+            - /url: /resume-versions
+        - button "设置 API Key" [ref=e18] [cursor=pointer]
+  - main [ref=e19]:
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - paragraph [ref=e22]: Coding Practice
+        - heading "手写 / 算法练习" [level=1] [ref=e23]
+        - paragraph [ref=e24]: 91 道前端实习高频手写题和算法题，在浏览器端编写代码并运行测试用例。通过后可请求 AI 审查代码质量，获得正确性、边界处理、复杂度和风格四维评分。
+      - generic [ref=e25]:
+        - complementary [ref=e26]:
+          - heading "题目列表（91 / 91）" [level=2] [ref=e27]
+          - generic [ref=e28]:
+            - button "全部" [ref=e29] [cursor=pointer]
+            - button "手写题" [ref=e30] [cursor=pointer]
+            - button "算法题" [ref=e31] [cursor=pointer]
+          - generic [ref=e32]:
+            - button "01. 手写防抖 debounce 难度 ★ 频率 🔥🔥🔥 8min" [ref=e33] [cursor=pointer]:
+              - generic [ref=e35]: 01. 手写防抖 debounce
+              - generic [ref=e36]:
+                - generic [ref=e37]: 难度 ★
+                - generic [ref=e38]: 频率 🔥🔥🔥
+                - generic [ref=e39]: 8min
+            - button "02. 手写节流 throttle 难度 ★ 频率 🔥🔥 8min" [ref=e40] [cursor=pointer]:
+              - generic [ref=e42]: 02. 手写节流 throttle
+              - generic [ref=e43]:
+                - generic [ref=e44]: 难度 ★
+                - generic [ref=e45]: 频率 🔥🔥
+                - generic [ref=e46]: 8min
+            - button "03. 手写深拷贝 deepClone 难度 ★★ 频率 🔥🔥 12min" [ref=e47] [cursor=pointer]:
+              - generic [ref=e49]: 03. 手写深拷贝 deepClone
+              - generic [ref=e50]:
+                - generic [ref=e51]: 难度 ★★
+                - generic [ref=e52]: 频率 🔥🔥
+                - generic [ref=e53]: 12min
+            - button "04. 手写 call / apply / bind 难度 ★★ 频率 🔥🔥🔥 15min" [ref=e54] [cursor=pointer]:
+              - generic [ref=e56]: 04. 手写 call / apply / bind
+              - generic [ref=e57]:
+                - generic [ref=e58]: 难度 ★★
+                - generic [ref=e59]: 频率 🔥🔥🔥
+                - generic [ref=e60]: 15min
+            - button "05. 手写 Promise（简版） 难度 ★★★ 频率 🔥🔥 20min" [ref=e61] [cursor=pointer]:
+              - generic [ref=e63]: 05. 手写 Promise（简版）
+              - generic [ref=e64]:
+                - generic [ref=e65]: 难度 ★★★
+                - generic [ref=e66]: 频率 🔥🔥
+                - generic [ref=e67]: 20min
+            - button "06. 手写 Promise.all 难度 ★★ 频率 🔥🔥 10min" [ref=e68] [cursor=pointer]:
+              - generic [ref=e70]: 06. 手写 Promise.all
+              - generic [ref=e71]:
+                - generic [ref=e72]: 难度 ★★
+                - generic [ref=e73]: 频率 🔥🔥
+                - generic [ref=e74]: 10min
+            - button "07. 手写 LRU Cache 难度 ★★★ 频率 🔥🔥 12min" [ref=e75] [cursor=pointer]:
+              - generic [ref=e77]: 07. 手写 LRU Cache
+              - generic [ref=e78]:
+                - generic [ref=e79]: 难度 ★★★
+                - generic [ref=e80]: 频率 🔥🔥
+                - generic [ref=e81]: 12min
+            - button "08. 手写 new 操作符 难度 ★ 频率 🔥 5min" [ref=e82] [cursor=pointer]:
+              - generic [ref=e84]: 08. 手写 new 操作符
+              - generic [ref=e85]:
+                - generic [ref=e86]: 难度 ★
+                - generic [ref=e87]: 频率 🔥
+                - generic [ref=e88]: 5min
+            - button "09. 手写 EventEmitter 难度 ★★ 频率 🔥 10min" [ref=e89] [cursor=pointer]:
+              - generic [ref=e91]: 09. 手写 EventEmitter
+              - generic [ref=e92]:
+                - generic [ref=e93]: 难度 ★★
+                - generic [ref=e94]: 频率 🔥
+                - generic [ref=e95]: 10min
+            - button "10. 手写 Promise 并发控制 难度 ★★★ 频率 🔥🔥 12min" [ref=e96] [cursor=pointer]:
+              - generic [ref=e98]: 10. 手写 Promise 并发控制
+              - generic [ref=e99]:
+                - generic [ref=e100]: 难度 ★★★
+                - generic [ref=e101]: 频率 🔥🔥
+                - generic [ref=e102]: 12min
+            - button "11. 手写柯里化 curry 难度 ★★ 频率 🔥🔥 8min" [ref=e103] [cursor=pointer]:
+              - generic [ref=e105]: 11. 手写柯里化 curry
+              - generic [ref=e106]:
+                - generic [ref=e107]: 难度 ★★
+                - generic [ref=e108]: 频率 🔥🔥
+                - generic [ref=e109]: 8min
+            - button "12. 手写数组扁平化 flatten 难度 ★ 频率 🔥 8min" [ref=e110] [cursor=pointer]:
+              - generic [ref=e112]: 12. 手写数组扁平化 flatten
+              - generic [ref=e113]:
+                - generic [ref=e114]: 难度 ★
+                - generic [ref=e115]: 频率 🔥
+                - generic [ref=e116]: 8min
+            - button "13. 手写 instanceof 难度 ★ 频率 🔥 5min" [ref=e117] [cursor=pointer]:
+              - generic [ref=e119]: 13. 手写 instanceof
+              - generic [ref=e120]:
+                - generic [ref=e121]: 难度 ★
+                - generic [ref=e122]: 频率 🔥
+                - generic [ref=e123]: 5min
+            - button "14. 手写 Promise.race 难度 ★ 频率 🔥🔥 5min" [ref=e124] [cursor=pointer]:
+              - generic [ref=e126]: 14. 手写 Promise.race
+              - generic [ref=e127]:
+                - generic [ref=e128]: 难度 ★
+                - generic [ref=e129]: 频率 🔥🔥
+                - generic [ref=e130]: 5min
+            - button "15. 手写 Promise.allSettled 难度 ★★ 频率 🔥 8min" [ref=e131] [cursor=pointer]:
+              - generic [ref=e133]: 15. 手写 Promise.allSettled
+              - generic [ref=e134]:
+                - generic [ref=e135]: 难度 ★★
+                - generic [ref=e136]: 频率 🔥
+                - generic [ref=e137]: 8min
+            - button "16. 数组去重 unique 难度 ★ 频率 🔥🔥 5min" [ref=e138] [cursor=pointer]:
+              - generic [ref=e140]: 16. 数组去重 unique
+              - generic [ref=e141]:
+                - generic [ref=e142]: 难度 ★
+                - generic [ref=e143]: 频率 🔥🔥
+                - generic [ref=e144]: 5min
+            - button "17. 手写 Object.create 难度 ★ 频率 🔥 5min" [ref=e145] [cursor=pointer]:
+              - generic [ref=e147]: 17. 手写 Object.create
+              - generic [ref=e148]:
+                - generic [ref=e149]: 难度 ★
+                - generic [ref=e150]: 频率 🔥
+                - generic [ref=e151]: 5min
+            - button "18. 模板字符串解析 render 难度 ★★ 频率 🔥🔥 10min" [ref=e152] [cursor=pointer]:
+              - generic [ref=e154]: 18. 模板字符串解析 render
+              - generic [ref=e155]:
+                - generic [ref=e156]: 难度 ★★
+                - generic [ref=e157]: 频率 🔥🔥
+                - generic [ref=e158]: 10min
+            - button "19. 大数相加 addBigNumber 难度 ★★ 频率 🔥🔥 10min" [ref=e159] [cursor=pointer]:
+              - generic [ref=e161]: 19. 大数相加 addBigNumber
+              - generic [ref=e162]:
+                - generic [ref=e163]: 难度 ★★
+                - generic [ref=e164]: 频率 🔥🔥
+                - generic [ref=e165]: 10min
+            - button "20. 手写 JSON.stringify（简版） 难度 ★★ 频率 🔥 12min" [ref=e166] [cursor=pointer]:
+              - generic [ref=e168]: 20. 手写 JSON.stringify（简版）
+              - generic [ref=e169]:
+                - generic [ref=e170]: 难度 ★★
+                - generic [ref=e171]: 频率 🔥
+                - generic [ref=e172]: 12min
+            - generic [ref=e173]: 加载更多（20/91）
+        - generic [ref=e174]:
+          - generic [ref=e175]:
+            - generic [ref=e176]:
+              - paragraph [ref=e177]: 运行次数
+              - paragraph [ref=e178]: "0"
+            - generic [ref=e179]:
+              - paragraph [ref=e180]: 快照
+              - paragraph [ref=e181]: "0"
+            - generic [ref=e182]:
+              - paragraph [ref=e183]: 收藏题目
+              - paragraph [ref=e184]: "0"
+            - generic [ref=e185]:
+              - paragraph [ref=e186]: 最近结果
+              - paragraph [ref=e187]: "--"
+          - generic [ref=e188]:
+            - generic [ref=e189]:
+              - generic [ref=e190]:
+                - heading "手写防抖 debounce" [level=2] [ref=e191]
+                - paragraph [ref=e192]: 事件触发后 delay 毫秒才执行，期间再次触发则重新计时。正确绑定 this 和参数。
+              - generic [ref=e193]:
+                - button "☆ 收藏" [ref=e194] [cursor=pointer]
+                - generic [ref=e195]: 限时 8 分钟
+                - generic [ref=e196]: 难度 ★
+            - generic [ref=e199]:
+              - generic [ref=e200]:
+                - generic [ref=e201]:
+                  - generic [ref=e202]: "1"
+                  - generic [ref=e203]: "2"
+                  - generic [ref=e204]: "3"
+                - generic [ref=e206]: ⌄
+              - textbox [ref=e207]:
+                - generic [ref=e208]: "function debounce(fn, delay = 300) {"
+                - generic [ref=e209]: // 在这里写你的实现
+                - generic [ref=e210]: "}"
+            - generic [ref=e211]:
+              - button "运行测试" [ref=e212] [cursor=pointer]
+              - button "先运行测试" [disabled] [ref=e213]
+              - button "保存快照" [ref=e214] [cursor=pointer]
+              - button "自定义测试" [ref=e215] [cursor=pointer]
+              - button "重置代码" [ref=e216] [cursor=pointer]
+      - generic [ref=e217]:
+        - generic [ref=e219]:
+          - paragraph [ref=e220]: Training Dashboard
+          - heading "训练数据看板" [level=3] [ref=e221]
+        - generic [ref=e222]:
+          - generic [ref=e223]:
+            - paragraph [ref=e224]: 模拟面试
+            - paragraph [ref=e225]: 2次
+          - generic [ref=e226]:
+            - paragraph [ref=e227]: 手写提交
+            - paragraph [ref=e228]: 0次
+          - generic [ref=e229]:
+            - paragraph [ref=e230]: 通过率
+            - paragraph [ref=e231]: 0%
+          - generic [ref=e232]:
+            - paragraph [ref=e233]: 题目覆盖
+            - paragraph [ref=e234]: 0题
+          - generic [ref=e235]:
+            - paragraph [ref=e236]: 收藏题目
+            - paragraph [ref=e237]: 0题
+          - generic [ref=e238]:
+            - paragraph [ref=e239]: 平均 CPU
+            - paragraph [ref=e240]: 0ms
+          - generic [ref=e241]:
+            - paragraph [ref=e242]: 简历版本
+            - paragraph [ref=e243]: 0个
+        - generic [ref=e244]:
+          - paragraph [ref=e245]: 最近面试能力画像
+          - img "能力雷达图" [ref=e246]:
+            - generic [ref=e255]: 准确性
+            - generic [ref=e256]: 结构
+            - generic [ref=e257]: 深度
+            - generic [ref=e258]: 边界
+            - generic [ref=e259]: 复盘
+  - button "Open Next.js Dev Tools" [ref=e265] [cursor=pointer]:
+    - img [ref=e266]
+  - alert [ref=e269]

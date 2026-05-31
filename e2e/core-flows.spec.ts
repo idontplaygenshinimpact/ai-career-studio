@@ -29,25 +29,25 @@ test.describe("手写练习核心流程", () => {
 	test("可以切换题目分类", async ({ page }) => {
 		await page.goto("/coding-practice");
 		await page.waitForSelector("text=题目列表", { timeout: 10000 });
-		await page.click("text=手写题");
-		await expect(page.locator("text=手写题")).toBeVisible();
-		await page.click("text=算法题");
-		await expect(page.locator("text=算法题")).toBeVisible();
-		await page.click("text=全部");
+		await page.getByRole("button", { name: "手写题" }).click();
+		await expect(page.getByRole("button", { name: "手写题" })).toBeVisible();
+		await page.getByRole("button", { name: "算法题" }).click();
+		await expect(page.getByRole("button", { name: "算法题" })).toBeVisible();
+		await page.getByRole("button", { name: "全部" }).click();
 	});
 
 	test("选择题目后显示题目描述和代码编辑器", async ({ page }) => {
 		await page.goto("/coding-practice");
 		await page.waitForSelector("text=题目列表", { timeout: 10000 });
-		await expect(page.locator("text=手写防抖")).toBeVisible();
-		await expect(page.locator("text=运行测试")).toBeVisible();
+		await expect(page.getByRole("heading", { name: /手写防抖/ })).toBeVisible();
+		await expect(page.getByRole("button", { name: "运行测试", exact: true })).toBeVisible();
 	});
 
 	test("运行按钮和 AI 审查按钮存在", async ({ page }) => {
 		await page.goto("/coding-practice");
 		await page.waitForSelector("text=运行测试", { timeout: 10000 });
-		const runBtn = page.getByRole("button", { name: /运行测试/ });
-		const aiBtn = page.getByRole("button", { name: /AI 代码审查/ });
+		const runBtn = page.getByRole("button", { name: "运行测试", exact: true });
+		const aiBtn = page.getByRole("button", { name: /先运行测试/ });
 		await expect(runBtn).toBeVisible();
 		await expect(aiBtn).toBeVisible();
 	});

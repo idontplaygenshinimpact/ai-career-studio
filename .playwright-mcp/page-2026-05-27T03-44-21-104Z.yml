@@ -1,0 +1,136 @@
+- generic [active] [ref=e1]:
+  - navigation "主导航" [ref=e2]:
+    - generic [ref=e3]:
+      - link "AI CAREER STUDIO 求职训练作战室" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e5]: AI
+        - generic [ref=e6]:
+          - generic [ref=e7]: CAREER STUDIO
+          - generic [ref=e8]: 求职训练作战室
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - link "首页" [ref=e11] [cursor=pointer]:
+            - /url: /
+          - link "JD 匹配" [ref=e12] [cursor=pointer]:
+            - /url: /jd-match
+          - link "简历诊断" [ref=e13] [cursor=pointer]:
+            - /url: /resume-review
+          - link "项目优化" [ref=e14] [cursor=pointer]:
+            - /url: /project-polish
+          - link "模拟面试" [ref=e15] [cursor=pointer]:
+            - /url: /mock-interview
+          - link "手写练习" [ref=e16] [cursor=pointer]:
+            - /url: /coding-practice
+          - link "简历版本" [ref=e17] [cursor=pointer]:
+            - /url: /resume-versions
+        - button "设置 API Key" [ref=e18] [cursor=pointer]
+  - main [ref=e19]:
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - paragraph [ref=e22]: Real Interview
+        - heading "模拟面试追问" [level=1] [ref=e23]
+        - paragraph [ref=e24]: 上传或粘贴简历后，系统会先解析项目、实习和技能线索，再由 AI 面试官围绕项目、基础、工程化和边界情况不断深挖。
+      - generic [ref=e25]:
+        - article [ref=e26]:
+          - generic [ref=e27]:
+            - button "练习模式 允许手动切换追问点，适合慢慢打磨 STAR 表达。" [ref=e28] [cursor=pointer]:
+              - generic [ref=e29]: 练习模式
+              - generic [ref=e31]: 允许手动切换追问点，适合慢慢打磨 STAR 表达。
+            - button "连贯追问模式 由 AI 面试官主导深挖、切题和基础题穿插。" [ref=e32] [cursor=pointer]:
+              - generic [ref=e33]: 连贯追问模式
+              - generic [ref=e35]: 由 AI 面试官主导深挖、切题和基础题穿插。
+          - generic [ref=e36]:
+            - button "温和引导型 耐心引导，给予充分思考时间，适合首次模拟面试。" [ref=e37] [cursor=pointer]:
+              - generic [ref=e38]: 温和引导型
+              - generic [ref=e40]: 耐心引导，给予充分思考时间，适合首次模拟面试。
+            - button "压力追问型 节奏快、追问紧，模拟大厂真实高压面试。" [ref=e41] [cursor=pointer]:
+              - generic [ref=e42]: 压力追问型
+              - generic [ref=e44]: 节奏快、追问紧，模拟大厂真实高压面试。
+            - button "技术深挖型 围绕技术细节不断深挖，考察底层理解。" [ref=e45] [cursor=pointer]:
+              - generic [ref=e46]: 技术深挖型
+              - generic [ref=e48]: 围绕技术细节不断深挖，考察底层理解。
+          - generic [ref=e49]:
+            - generic [ref=e50]:
+              - generic [ref=e51]:
+                - text: 简历内容
+                - paragraph [ref=e52]: 支持格式：.txt / .md / .json / .docx / .pdf。
+              - generic "上传简历文件" [ref=e53] [cursor=pointer]:
+                - text: 上传简历文件
+                - button "上传简历文件" [ref=e54]
+            - textbox "简历内容" [ref=e55]:
+              - /placeholder: 粘贴简历内容，或上传文件后开始面试。
+            - generic [ref=e56]:
+              - textbox "目标岗位，例如：前端实习生" [ref=e57]: 前端实习生
+              - generic [ref=e58]:
+                - paragraph [ref=e59]: 请粘贴真实简历，或上传 .txt / .md / .json / .docx 文件后开始真实面试。
+                - paragraph [ref=e60]: 当前字数：0
+              - button "解析简历并开始" [disabled] [ref=e61]
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - paragraph [ref=e64]: 当前追问点 · 等待简历解析
+              - heading "上传或粘贴简历后，AI 会先解析项目/实习/技能线索，再开始一面追问。" [level=2] [ref=e65]
+            - generic [ref=e66]: 当前点已追问 0 次
+          - generic [ref=e67]:
+            - generic [ref=e68]: AI 驱动追问
+            - generic [ref=e69]: 基础/八股已生成 0 轮，已回答 0 轮
+          - generic [ref=e70]:
+            - generic [ref=e72]: 我的回答
+            - textbox "我的回答" [ref=e73]:
+              - /placeholder: 按面试要求回答：背景、个人职责、技术取舍、边界情况、验证结果。
+          - generic [ref=e74]:
+            - button "提交回答，继续追问" [disabled] [ref=e75]
+            - button "重置" [ref=e76] [cursor=pointer]
+        - complementary [ref=e77]:
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - generic [ref=e80]:
+                - paragraph [ref=e81]: State Machine
+                - heading "面试流程状态机" [level=3] [ref=e82]
+              - generic [ref=e83]: AI 自动切题
+            - generic [ref=e84]:
+              - generic [ref=e86]:
+                - generic [ref=e89]:
+                  - paragraph [ref=e90]: 1. 简历输入
+                  - paragraph [ref=e91]: 等待 40+ 字真实简历
+                - generic [ref=e92]: 进行中
+              - generic [ref=e94]:
+                - generic [ref=e97]:
+                  - paragraph [ref=e98]: 2. AI 规划
+                  - paragraph [ref=e99]: plan action 生成追问图谱
+                - generic [ref=e100]: 等待
+              - generic [ref=e102]:
+                - generic [ref=e105]:
+                  - paragraph [ref=e106]: 3. 动态追问
+                  - paragraph [ref=e107]: round action 按回答推进
+                - generic [ref=e108]: 等待
+              - generic [ref=e110]:
+                - generic [ref=e113]:
+                  - paragraph [ref=e114]: 4. 手写穿插
+                  - paragraph [ref=e115]: 基础/手写覆盖 0/0
+                - generic [ref=e116]: 等待
+              - generic [ref=e118]:
+                - generic [ref=e121]:
+                  - paragraph [ref=e122]: 5. 流式复盘
+                  - paragraph [ref=e123]: review action 汇总面试轨迹
+                - generic [ref=e124]: 等待
+            - generic [ref=e125]:
+              - generic [ref=e126]:
+                - paragraph [ref=e127]: 当前深挖
+                - paragraph [ref=e128]: "0"
+              - generic [ref=e129]:
+                - paragraph [ref=e130]: 追问节点
+                - paragraph [ref=e131]: "0"
+              - generic [ref=e132]:
+                - paragraph [ref=e133]: 回答轮次
+                - paragraph [ref=e134]: "0"
+          - generic [ref=e135]:
+            - paragraph [ref=e136]: Interview Score
+            - generic [ref=e137]: —
+            - paragraph [ref=e138]: 上传简历并开始面试后，这里会实时显示评分和追问进度。
+          - generic [ref=e139]:
+            - heading "复盘报告" [level=2] [ref=e140]
+            - paragraph [ref=e142]: 完成面试后，AI 将生成个性化复盘报告，包含优势、短板和改进建议。
+          - generic [ref=e143]:
+            - heading "追问链" [level=2] [ref=e144]
+            - paragraph [ref=e145]: 追问点来自简历解析结果，并穿插目标岗位高频基础知识；连贯模式由 AI 面试官按回答质量、追问深度和逻辑边界自动切题。
+            - paragraph [ref=e147]: 尚未生成追问链。

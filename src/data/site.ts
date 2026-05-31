@@ -1,7 +1,7 @@
 export const highlightStats = [
-	{ label: "核心模块", value: "6" },
+	{ label: "核心模块", value: "7" },
 	{ label: "追问模式", value: "回答驱动" },
-	{ label: "手写题库", value: "13 题" },
+	{ label: "手写题库", value: "91 题" },
 ];
 
 export const navItems = [
@@ -11,6 +11,7 @@ export const navItems = [
 	{ label: "项目优化", href: "/project-polish" },
 	{ label: "模拟面试", href: "/mock-interview" },
 	{ label: "手写练习", href: "/coding-practice" },
+	{ label: "简历版本", href: "/resume-versions" },
 ];
 
 export const featureCards = [
@@ -83,6 +84,6 @@ export const techStack = [
 	"Zustand 状态管理 + Zod 请求校验",
 	"真实 AI Chat Completions 接口 + 结构化 JSON 输出协议",
 	"CodeMirror 6 代码编辑器 + Web Worker 沙箱执行",
-	"浏览器端简历文件解析：txt / md / json / docx",
+	"浏览器端简历文件解析：txt / md / json / docx / 文本型 PDF",
 	"模块化训练链路：JD 匹配、简历诊断、项目优化、模拟面试、手写练习",
 ];
