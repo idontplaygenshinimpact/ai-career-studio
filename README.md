@@ -107,7 +107,8 @@
 ### 7. 全局功能
 
 - **用户自带 API Key**：导航栏设置面板，填入 Key/BaseURL/Model 后存 localStorage，所有请求自动通过 header 传递，优先级高于服务端 `.env.local`
-- **PWA 支持**：manifest.json + Service Worker + SVG 图标，支持安装到桌面和离线访问
+- **AI Base URL 安全校验**：服务端统一限制自定义 Base URL 必须是公开 HTTPS 地址，拒绝 localhost、内网 IP、本机地址和携带凭据的 URL，降低 SSRF 风险
+- **PWA 支持**：manifest.json + 分层 Service Worker 缓存（API 不缓存、Next 静态资源 cache-first、页面 network-first）+ SVG 图标，支持安装到桌面和离线访问
 - **错误边界**：全局 error.tsx（带重试按钮）+ 每个页面独立的骨架屏 loading
 - **无障碍**：导航栏 aria-label、设置面板 role="dialog"、语音按钮 aria-label
 - **API 频率限制**：所有 AI 接口 30 次/分钟 IP 限制，防止滥用
@@ -122,10 +123,21 @@
 | AI 接口 | OpenAI-compatible Chat Completions API（支持 SSE 流式） |
 | 文件解析 | mammoth（浏览器端 .docx 解析）+ pdfjs-dist（文本型 PDF 解析） |
 | 语音识别 | Web Speech API |
-| 单元测试 | vitest（158 个测试） |
+| 单元测试 | vitest（162 个测试） |
 | E2E 测试 | Playwright（59 个测试） |
 | 代码质量 | husky + lint-staged（提交前自动 eslint + tsc） |
-| PWA | Service Worker + Web App Manifest |
+| PWA / 性能监控 | Service Worker + Web App Manifest + Vercel Speed Insights |
+
+## 工程化与面试材料
+
+| 文档 | 说明 |
+|---|---|
+| [`docs/performance-report.md`](docs/performance-report.md) | 性能优化证据链：路由体积、动态加载、优化前后估算、Vercel 部署后验证项 |
+| [`docs/bundle-analysis.md`](docs/bundle-analysis.md) | Bundle 拆分分析：共享 chunk、页面 JS、CodeMirror / PDF 解析 / PDF 导出按需加载 |
+| [`docs/prompt-design.md`](docs/prompt-design.md) | AI Prompt 设计：`plan / round / review` 三阶段协议、JSON schema、badcase 和稳定性策略 |
+| [`docs/interview-faq.md`](docs/interview-faq.md) | 秋招面试 FAQ：SSE、Web Worker 沙箱、LCS diff、AI 输出稳定性、无后端取舍和 Vercel 部署注意点 |
+
+当前验证结果：`npm run lint`、`npx tsc --noEmit`、`npm test`（162 tests）、`npm run test:e2e`（59 tests）和 `npm run build` 均已通过。
 
 ## 模块设计
 
@@ -304,7 +316,7 @@ plan API 让 AI 根据目标岗位（`position`）同时生成简历追问点和
 - **复杂状态流**：用 Zustand + selector 管理多阶段面试状态机，用 `useCodingWorkbench` 管理轻量 IDE 全部状态，把业务逻辑从 UI 壳中彻底分离。
 - **统一 AI 请求控制**：`useAiRequest` Hook 统一管理 JD 匹配、简历诊断、项目优化、代码审查等 AI 请求状态（loading / error / status / cancel / retry），避免每个页面重复实现请求逻辑；`fetchWithAiHeaders` 覆盖用户 Key 注入、429/5xx 重试、超时和外部取消。
 - **组件工程化**：手写练习页从 700+ 行单文件拆为 `useCodingWorkbench` hook + 7 个 `memo` 子组件 + 3 个工具模块，主组件只做 UI 组装。
-- **性能优化**：CodeMirror 通过 `DynamicCodeEditor` 动态加载（`next/dynamic + ssr: false`），模拟面试页首屏从 313 kB 降到 147 kB（-53%）。
+- **性能优化**：CodeMirror 通过 `DynamicCodeEditor` 动态加载（`next/dynamic + ssr: false`），模拟面试页首屏从约 313 kB 降到约 149 kB（-53%）。
 - **复杂交互**：支持语音输入、SSE 流式复盘、代码编辑器作答、手写题自动识别、自定义测试、快照恢复、提交记录和运行测试，覆盖表单、流、Worker、编辑器、本地持久化等多类前端交互。
 - **训练数据看板**：SVG 五维能力雷达图 + 手写题通过趋势 + 7 项训练指标（含简历版本数），形成「训练 → 反馈 → 再训练」闭环。
 - **简历版本管理**：前 200 字指纹 hash + 相似度比对自动归类多简历线，LCS 动态规划行级 diff，跨模块自动保存版本并关联评分和建议。
@@ -373,6 +385,14 @@ AI_MODEL=gpt-4o-mini
 
 PWA 支持：部署后用户可在手机浏览器中"添加到主屏幕"，支持离线访问本地分析功能。
 
+### Vercel 部署前检查
+
+1. 在 Vercel Project Settings 中配置：`AI_BASE_URL`、`AI_API_KEY`、`AI_MODEL`。
+2. 本地确认 `npm run build` 通过，并记录 route size 输出。
+3. 部署后访问 `/mock-interview`，验证 `review` 流式复盘可以正常输出。
+4. 如果不希望服务端持有 Key，可以不配置 `AI_API_KEY`，由用户在页面右上角设置面板填入自己的 Key。
+5. 部署后在 Vercel 控制台查看 Speed Insights 指标，并补一份 Lighthouse 或 Network 截图，和 `docs/performance-report.md` 一起作为性能优化证据。
+
 ## 可写入简历的项目描述
 
-> CareerPilot / AI Career Studio：基于 Next.js 15 + TypeScript 搭建面向前端校招的 AI 能力训练系统，覆盖 JD 匹配、简历诊断、项目优化、多轮模拟面试、手写题练习和简历版本管理七大模块，形成「诊断 - 训练 - 复盘 - 迭代」闭环；设计 `plan / round / review` 三阶段 AI 面试协议和五阶段状态机，通过 Zustand selector 管理面试状态，通过 `useCodingWorkbench` 管理轻量 IDE 状态；实现项目优化结果保存为简历版本并带追问点进入模拟面试，实现简历版本自动归类（前 200 字指纹 hash + 相似度比对）、LCS 行级 diff 和纯规则引擎综合复盘（交叉简历/面试/手写三维度输出投递准备度）；将手写练习页从 700+ 行单文件拆为 hook + 7 个 memo 子组件，对 CodeMirror 做动态加载（面试页首屏 -53%）；封装 `useAiRequest` / `fetchWithAiHeaders` 统一 AI 请求的用户 Key 注入、取消、超时、429/5xx 重试和错误分类；实现 SVG 雷达图 + 趋势图训练看板；vitest 158 个单测 + Playwright 59 个 E2E（含负向路径和错误边界），husky 提交前自动 lint + type-check。
+> CareerPilot / AI Career Studio：基于 Next.js 15 + TypeScript 搭建面向前端校招的 AI 能力训练系统，覆盖 JD 匹配、简历诊断、项目优化、多轮模拟面试、手写题练习和简历版本管理七大模块，形成「诊断 - 训练 - 复盘 - 迭代」闭环；设计 `plan / round / review` 三阶段 AI 面试协议和五阶段状态机，通过 Zustand selector 管理面试状态，通过 `useCodingWorkbench` 管理轻量 IDE 状态；实现项目优化结果保存为简历版本并带追问点进入模拟面试，实现简历版本自动归类（前 200 字指纹 hash + 相似度比对）、LCS 行级 diff 和纯规则引擎综合复盘（交叉简历/面试/手写三维度输出投递准备度）；将手写练习页从 700+ 行单文件拆为 hook + 7 个 memo 子组件，对 CodeMirror 做动态加载（面试页首屏约 149 kB，较直接打包编辑器依赖估算减少约 53%）；封装 `useAiRequest` / `fetchWithAiHeaders` 统一 AI 请求的用户 Key 注入、取消、超时、429/5xx 重试和错误分类，并对自定义 AI Base URL 做 HTTPS / 内网地址校验以降低 SSRF 风险；实现分层 Service Worker 缓存和 Vercel Speed Insights 性能监控；vitest 162 个单测 + Playwright 59 个 E2E（含负向路径和错误边界），husky 提交前自动 lint + type-check。
