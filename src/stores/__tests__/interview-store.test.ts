@@ -25,7 +25,7 @@ function createBaseState(): InterviewStore {
 		fileStatus: "",
 		isParsingFile: false,
 		focusContext: "",
-		isPreparing: false,
+		phase: "idle",
 		planSummary: "尚未基于简历生成面试计划。",
 		topics: [],
 		activeQuestion: 0,
@@ -34,12 +34,9 @@ function createBaseState(): InterviewStore {
 		answer: "",
 		history: [],
 		rounds: [],
-		isAdvancing: false,
-		isCompleted: false,
 		errorMessage: "",
 		aiScores: [],
 		reviewData: null,
-		isGeneratingReview: false,
 		streamingReviewText: "",
 		setMode: () => {},
 		setInterviewerRole: () => {},
@@ -163,32 +160,32 @@ describe("selectCanStartInterview", () => {
 	});
 
 	it("returns false when preparing", () => {
-		const state = { ...createBaseState(), resumeText: "x".repeat(50), isPreparing: true };
+		const state = { ...createBaseState(), resumeText: "x".repeat(50), phase: "preparing" as const };
 		expect(selectCanStartInterview(state)).toBe(false);
 	});
 });
 
 describe("selectCanAdvance", () => {
 	it("returns false without a round", () => {
-		const state = { ...createBaseState(), answer: "有内容" };
+		const state = { ...createBaseState(), answer: "有内容", phase: "interviewing" as const };
 		expect(selectCanAdvance(state)).toBe(false);
 	});
 
 	it("returns false with empty answer", () => {
 		const round = createOpeningRound(frontendFundamentalTopics[0]);
-		const state = { ...createBaseState(), rounds: [round], answer: "" };
+		const state = { ...createBaseState(), rounds: [round], answer: "", phase: "interviewing" as const };
 		expect(selectCanAdvance(state)).toBe(false);
 	});
 
 	it("returns true with round and answer", () => {
 		const round = createOpeningRound(frontendFundamentalTopics[0]);
-		const state = { ...createBaseState(), rounds: [round], answer: "有内容" };
+		const state = { ...createBaseState(), rounds: [round], answer: "有内容", phase: "interviewing" as const };
 		expect(selectCanAdvance(state)).toBe(true);
 	});
 
 	it("returns false when completed", () => {
 		const round = createOpeningRound(frontendFundamentalTopics[0]);
-		const state = { ...createBaseState(), rounds: [round], answer: "有内容", isCompleted: true };
+		const state = { ...createBaseState(), rounds: [round], answer: "有内容", phase: "completed" as const };
 		expect(selectCanAdvance(state)).toBe(false);
 	});
 });

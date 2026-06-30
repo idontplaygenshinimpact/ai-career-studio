@@ -93,15 +93,15 @@
 当前策略：
 
 - 先取前 200 字去空白作为 normalized text。
-- 计算 fingerprint 做快速匹配。
-- fingerprint 不一致时，用字符位置相似度兜底。
+- 计算 FNV-1a 32-bit hash 做快速匹配（offset basis 2166136261, prime 16777619）。
+- fingerprint 不一致时，用 Levenshtein 编辑距离归一化相似度兜底（Wagner-Fischer DP + 滚动数组，空间 O(min(m,n))）。
 - 相似度达到 60% 认为属于同一条简历线。
 
 这个策略的取舍：
 
-- 优点：实现轻量、无需服务端、对简历微调有容错。
-- 缺点：如果用户大幅调整简历开头，可能被识别成新线。
-- 可扩展：引入 SimHash、MinHash 或基于段落的相似度计算。
+- 优点：实现轻量、无需服务端、对简历微调有容错、Levenshtein 对插入/删除/替换都有正确度量。
+- 缺点：如果用户大幅调整简历开头，可能被识别成新线；前 200 字窗口外的改动不影响指纹。
+- 可扩展：引入 SimHash 做近似检测，或用 TF-IDF cosine 做全文相似度。
 
 ## 7. 为什么没有做数据库和用户系统？
 
@@ -174,3 +174,65 @@
 面试回答：
 
 > 我把缓存策略按资源类型拆分：API 不缓存，避免隐私数据和 AI 响应被 SW 缓存；Next 静态资源 cache-first，提高重复访问速度；页面 network-first，保证在线时更新及时、离线时可用。
+
+## 12. 简历相似度用的什么算法？为什么不用 SimHash？
+
+`src/lib/resume-versions.ts` 中的 `calcSimilarity` 使用 Levenshtein 编辑距离（Wagner-Fischer DP）做归一化相似度：
+
+```
+similarity = 1 - editDistance(a, b) / max(len(a), len(b))
+```
+
+- 时间复杂度：O(m × n)，m 和 n 是两段 normalized text 的长度（最长 200 字）。
+- 空间复杂度：O(min(m, n))，使用滚动数组只保留两行 DP。
+- 优点：对插入、删除、替换三种编辑操作都有正确度量，不像简单的位置匹配那样对插入敏感。
+- 适用场景：简历前 200 字窗口内的比较，规模小，DP 开销可忽略。
+
+为什么不用 SimHash / MinHash：
+
+- SimHash 适合大规模文本去重（搜索引擎级别），需要 shingle 切分和位运算，对 200 字窗口收益不大。
+- Levenshtein 在小窗口下更直观、可解释、面试时容易手推公式。
+- 如果扩展到全文相似度或海量简历库，可以考虑 SimHash + Hamming 距离做第一轮筛选，Levenshtein 做第二轮精确比较。
+
+`calcFingerprint` 使用 FNV-1a 32-bit hash（offset basis 2166136261, prime 16777619），选择原因是实现简单、分布均匀、碰撞率低于朴素乘法 hash，且面试时能说出算法名称和参数。
+
+## 13. 综合复盘的"规则引擎"怎么实现的？
+
+`src/lib/comprehensive-advice.ts` 采用 Production Rule System 模式：
+
+1. **FactBase 构建**：`buildFactBase()` 从 localStorage 收集 resumeScore、interviewAvg、codingPassRate、unresolvedCount、interviewCount、attemptCount、recentFailureIds，构造不可变事实对象。
+
+2. **规则注册**：
+   - `readinessRules: ReadinessRule[]`：按 priority 降序注册 5 条规则（no-data / can-deliver / basic-ready / needs-polish / fallback），每条有 `condition: (facts) => boolean` 和对应的 `readiness` 值。
+   - `actionRules: ActionRule[]`：注册 8 条建议规则，每条有 `condition`、`priority`、`category` 和 `action`（支持字符串或函数，函数可访问 facts 动态生成文案）。
+
+3. **评估执行**：
+   - `evaluateReadiness(facts)`：按 priority 降序遍历 readinessRules，返回第一条匹配的 readiness。
+   - `evaluateActions(facts)`：遍历所有 actionRules，收集全部匹配项，按 priority 升序排列。无匹配时返回默认兜底建议。
+
+扩展方式：只需向 readinessRules 或 actionRules 数组追加新规则，不需要修改 evaluate 逻辑。
+
+与传统 if-else 的区别：规则和执行逻辑解耦，规则可以独立测试（传入 mock facts），新增维度只需加规则不改流程。
+
+## 14. 限流 30 次/分钟在 Vercel Serverless 怎么生效？
+
+`src/lib/rate-limit.ts` 使用 Sliding Window Log 算法 + LRU 淘汰：
+
+- 每个 IP 维护窗口内（60s）的请求时间戳数组。
+- 每次请求清理过期时间戳，窗口内超过 30 次则拒绝。
+- IP 条目上限 1024，超过时按 LRU 淘汰最久未访问的 IP。
+
+**单实例限制**：这个实现是进程内 Map，Vercel Serverless 每个函数实例独立内存，多实例各自计数。这意味着：
+
+- 单实例场景（开发环境、低流量部署）有效。
+- 多实例高并发场景下，同一 IP 的请求分散到不同实例，限流效果被稀释。
+- IP 从 `x-forwarded-for` 取首个值，理论上可被伪造（但 Vercel 会覆盖该 header）。
+
+**分布式环境方案**：
+
+1. Upstash Redis + `@upstash/ratelimit`：Serverless 友好，按 HTTP 调用计费。
+2. Vercel KV（底层也是 Upstash Redis）。
+3. Cloudflare Workers + Durable Objects。
+4. 在 Vercel Edge Middleware 层做限流，比 API Route 更早拦截。
+
+面试回答时主动说明当前是单实例内存方案，并给出分布式升级路径，不要等面试官追问。

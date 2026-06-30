@@ -24,29 +24,48 @@ export function normalize(text: string): string {
 
 export function calcFingerprint(text: string): string {
 	const norm = normalize(text);
-	let hash = 0;
+	// FNV-1a 32-bit：offset basis 2166136261，prime 16777619；时间 O(n)、空间 O(1)
+	let hash = 2166136261 >>> 0;
 	for (let i = 0; i < norm.length; i++) {
-		hash = ((hash << 5) - hash + norm.charCodeAt(i)) | 0;
+		hash ^= norm.charCodeAt(i);
+		hash = Math.imul(hash, 16777619) >>> 0;
 	}
-	return Math.abs(hash).toString(36);
+	return hash.toString(36);
 }
 
 export function calcSimilarity(a: string, b: string): number {
 	const na = normalize(a);
 	const nb = normalize(b);
 	if (na.length === 0 || nb.length === 0) return 0;
+	if (na === nb) return 1;
 
-	const shorter = na.length < nb.length ? na : nb;
-	const longer = na.length < nb.length ? nb : na;
-	let matches = 0;
+	// Levenshtein 编辑距离（Wagner-Fischer），两行滚动数组优化到 O(min(m, n)) 空间
+	// 相似度 = 1 - editDistance / max(len_a, len_b)，时间 O(m*n)
+	const shorter = na.length <= nb.length ? na : nb;
+	const longer = na.length <= nb.length ? nb : na;
 
-	for (let i = 0; i < shorter.length; i++) {
-		if (shorter[i] === longer[i]) {
-			matches++;
+	let prevRow = Array.from({ length: shorter.length + 1 }, (_, index) => index);
+	let currRow = new Array<number>(shorter.length + 1);
+
+	for (let i = 1; i <= longer.length; i++) {
+		currRow[0] = i;
+		const longChar = longer.charCodeAt(i - 1);
+
+		for (let j = 1; j <= shorter.length; j++) {
+			const cost = longChar === shorter.charCodeAt(j - 1) ? 0 : 1;
+			const deletion = prevRow[j] + 1;
+			const insertion = currRow[j - 1] + 1;
+			const substitution = prevRow[j - 1] + cost;
+			currRow[j] = Math.min(deletion, insertion, substitution);
 		}
+
+		const temp = prevRow;
+		prevRow = currRow;
+		currRow = temp;
 	}
 
-	return matches / longer.length;
+	const editDistance = prevRow[shorter.length];
+	return 1 - editDistance / Math.max(na.length, nb.length);
 }
 
 // ---------------------------------------------------------------------------

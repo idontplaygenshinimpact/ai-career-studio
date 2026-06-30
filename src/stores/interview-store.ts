@@ -55,6 +55,72 @@ type RoundResponse = {
 };
 
 // ---------------------------------------------------------------------------
+// Finite State Machine (FSM)
+// ---------------------------------------------------------------------------
+//
+// 五阶段面试流程状态机。用 transitions map 显式声明每个状态的合法去向，
+// 由 transitionTo 拦截非法转换，避免组件/action 通过拼接多个 boolean
+// 推断状态时出现的"既在 preparing 又在 advancing"等不可能态。
+//
+//   idle ─► preparing ─► interviewing ─┬─► advancing ─┐
+//                                       │              │
+//                                       │◄─────────────┘
+//                                       │
+//                                       └─► reviewing ─► completed
+//
+// 任意状态都允许 → idle（reset 路径）。
+// ---------------------------------------------------------------------------
+
+export type InterviewPhase =
+	| "idle"
+	| "preparing"
+	| "interviewing"
+	| "advancing"
+	| "reviewing"
+	| "completed";
+
+export const TRANSITIONS: Record<InterviewPhase, InterviewPhase[]> = {
+	idle: ["preparing"],
+	preparing: ["interviewing", "idle"],
+	interviewing: ["advancing", "reviewing", "idle"],
+	advancing: ["interviewing", "idle"],
+	reviewing: ["completed", "idle"],
+	completed: ["idle"],
+};
+
+/**
+ * 校验并执行一次状态转换。
+ *
+ * @returns true 表示转换合法；false 表示非法（不会抛错，避免 UI 崩溃）。
+ *          在开发环境会通过 console.warn 暴露非法转换，方便排查。
+ */
+export function transitionTo(from: InterviewPhase, to: InterviewPhase): boolean {
+	if (from === to) return true;
+	const allowed = TRANSITIONS[from] ?? [];
+	if (!allowed.includes(to)) {
+		if (process.env.NODE_ENV !== "production") {
+			console.warn(
+				`[interview-store] Illegal phase transition: "${from}" -> "${to}". ` +
+					`Allowed: [${allowed.join(", ") || "<none>"}]`,
+			);
+		}
+		return false;
+	}
+	return true;
+}
+
+/**
+ * 工具函数：判断当前是否处于给定阶段集合中的任意一个。
+ * 用于组件做条件渲染时替代多个 boolean 的拼接判断。
+ */
+export function isInPhase(
+	current: InterviewPhase,
+	...phases: InterviewPhase[]
+): boolean {
+	return phases.includes(current);
+}
+
+// ---------------------------------------------------------------------------
 // Slice: Session Config — 面试前的配置状态
 // ---------------------------------------------------------------------------
 
@@ -73,7 +139,7 @@ type SessionConfigSlice = {
 // ---------------------------------------------------------------------------
 
 type InterviewProgressSlice = {
-	isPreparing: boolean;
+	phase: InterviewPhase;
 	planSummary: string;
 	topics: InterviewTopic[];
 	activeQuestion: number;
@@ -82,8 +148,6 @@ type InterviewProgressSlice = {
 	answer: string;
 	history: string[];
 	rounds: InterviewRound[];
-	isAdvancing: boolean;
-	isCompleted: boolean;
 	errorMessage: string;
 };
 
@@ -101,7 +165,6 @@ type ScoringSlice = {
 
 type ReviewSlice = {
 	reviewData: ReviewResponse | null;
-	isGeneratingReview: boolean;
 	streamingReviewText: string;
 };
 
@@ -280,7 +343,9 @@ export function selectAverageScore(state: InterviewState) {
 		return Math.round(total / validAiScores.length);
 	}
 
-	const scoreInputs = state.isCompleted
+	// "已结束面试"语义 = 已经在生成复盘 或 复盘已完成
+	const finished = isInPhase(state.phase, "reviewing", "completed");
+	const scoreInputs = finished
 		? state.history
 		: [...state.history, state.answer].filter((a) => a.trim().length > 0);
 
@@ -311,7 +376,7 @@ export function selectSummary(state: InterviewState) {
 export function selectCanStartInterview(state: InterviewState) {
 	return (
 		state.resumeText.trim().length >= 40 &&
-		!state.isPreparing &&
+		state.phase !== "preparing" &&
 		!state.isParsingFile
 	);
 }
@@ -321,8 +386,7 @@ export function selectCanAdvance(state: InterviewState) {
 	return (
 		Boolean(round) &&
 		state.answer.trim().length > 0 &&
-		!state.isAdvancing &&
-		!state.isCompleted
+		state.phase === "interviewing"
 	);
 }
 
@@ -348,6 +412,7 @@ export function selectReportMarkdown(state: InterviewState) {
 	const averageScore = selectAverageScore(state);
 	const currentScore = selectCurrentScore(state);
 	const fundamentalCount = selectFundamentalCount(state);
+	const finished = isInPhase(state.phase, "reviewing", "completed");
 
 	const reportEntries = state.rounds.map((item, index) => {
 		const savedAnswer = getSavedAnswer(
@@ -366,379 +431,446 @@ export function selectReportMarkdown(state: InterviewState) {
 		].join("\n");
 	});
 
-	return `# AI Career Studio 真实模拟面试复盘\n\n综合评分：${averageScore}/100\n\n面试状态：${state.isCompleted ? "已结束" : round ? "进行中" : "未开始"}\n面试模式：${state.mode === "auto" ? "连贯追问模式（AI 面试官自动切题）" : "练习模式（允许手动切换追问点）"}\n已记录回答：${state.history.length} 轮\n已覆盖基础/八股：${fundamentalCount} 轮\n目标岗位：${state.position}\n当前追问点：${round?.focus ?? "未开始"}\n当前点追问深度：${state.topicDepth}\n\n## 简历解析摘要\n${state.planSummary}\n\n## 总体建议\n${selectSummary(state)}\n\n## 分项评分\n- 技术准确性：${currentScore.accuracy}\n- 表达结构：${currentScore.structure}\n- 项目深度：${currentScore.depth}\n- 异常边界：${currentScore.riskHandling}\n- 复盘意识：${currentScore.reviewMindset}\n\n## 逻辑边界说明\n本次真实模拟面试不使用硬编码候选人画像，也不使用 Mock 兜底；项目与经历追问点来自上传/粘贴的真实简历，基础八股根据目标岗位穿插。练习模式允许手动切换追问点；连贯追问模式由 AI 面试官主导深挖和切题，并以前端兜底限制保证同一追问点最多连续深挖 ${AUTO_MODE_MAX_DEPTH + 1} 轮，避免把项目深挖变成用户手动结束。\n\n## 完整追问轨迹\n${reportEntries.join("\n\n")}\n`;
+	return `# AI Career Studio 真实模拟面试复盘\n\n综合评分：${averageScore}/100\n\n面试状态：${finished ? "已结束" : round ? "进行中" : "未开始"}\n面试模式：${state.mode === "auto" ? "连贯追问模式（AI 面试官自动切题）" : "练习模式（允许手动切换追问点）"}\n已记录回答：${state.history.length} 轮\n已覆盖基础/八股：${fundamentalCount} 轮\n目标岗位：${state.position}\n当前追问点：${round?.focus ?? "未开始"}\n当前点追问深度：${state.topicDepth}\n\n## 简历解析摘要\n${state.planSummary}\n\n## 总体建议\n${selectSummary(state)}\n\n## 分项评分\n- 技术准确性：${currentScore.accuracy}\n- 表达结构：${currentScore.structure}\n- 项目深度：${currentScore.depth}\n- 异常边界：${currentScore.riskHandling}\n- 复盘意识：${currentScore.reviewMindset}\n\n## 逻辑边界说明\n本次真实模拟面试不使用硬编码候选人画像，也不使用 Mock 兜底；项目与经历追问点来自上传/粘贴的真实简历，基础八股根据目标岗位穿插。练习模式允许手动切换追问点；连贯追问模式由 AI 面试官主导深挖和切题，并以前端兜底限制保证同一追问点最多连续深挖 ${AUTO_MODE_MAX_DEPTH + 1} 轮，避免把项目深挖变成用户手动结束。\n\n## 完整追问轨迹\n${reportEntries.join("\n\n")}\n`;
 }
 
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
 
-export const useInterviewStore = create<InterviewStore>()((set, get) => ({
-	// ── Session Config ──────────────────────────────────────────────────
-	mode: "auto",
-	interviewerRole: "gentle",
-	position: "前端实习生",
-	resumeText: "",
-	fileStatus: EMPTY_RESUME_HINT,
-	isParsingFile: false,
-	focusContext: "",
+export const useInterviewStore = create<InterviewStore>()((set, get) => {
+	/**
+	 * 内部包装：执行一次 FSM 状态转换并写入 store。
+	 * 若转换非法则只 warn 不写入，确保 UI 不崩溃。
+	 */
+	const advancePhase = (
+		to: InterviewPhase,
+		extraPatch: Partial<InterviewState> = {},
+	): boolean => {
+		const from = get().phase;
+		if (!transitionTo(from, to)) return false;
+		set({ ...extraPatch, phase: to });
+		return true;
+	};
 
-	// ── Interview Progress ──────────────────────────────────────────────
-	isPreparing: false,
-	planSummary: "尚未基于简历生成面试计划。",
-	topics: [],
-	activeQuestion: 0,
-	currentTopicIndex: 0,
-	topicDepth: 0,
-	answer: "",
-	history: [],
-	rounds: [],
-	isAdvancing: false,
-	isCompleted: false,
-	errorMessage: "",
+	return {
+		// ── Session Config ──────────────────────────────────────────────────
+		mode: "auto",
+		interviewerRole: "gentle",
+		position: "前端实习生",
+		resumeText: "",
+		fileStatus: EMPTY_RESUME_HINT,
+		isParsingFile: false,
+		focusContext: "",
 
-	// ── Scoring ─────────────────────────────────────────────────────────
-	aiScores: [],
+		// ── Interview Progress ──────────────────────────────────────────────
+		phase: "idle",
+		planSummary: "尚未基于简历生成面试计划。",
+		topics: [],
+		activeQuestion: 0,
+		currentTopicIndex: 0,
+		topicDepth: 0,
+		answer: "",
+		history: [],
+		rounds: [],
+		errorMessage: "",
 
-	// ── Review ──────────────────────────────────────────────────────────
-	reviewData: null,
-	isGeneratingReview: false,
-	streamingReviewText: "",
+		// ── Scoring ─────────────────────────────────────────────────────────
+		aiScores: [],
 
-	// ── Session Config Actions ──────────────────────────────────────────
-	setMode: (mode) => set({ mode }),
-	setInterviewerRole: (role) => set({ interviewerRole: role }),
-	setPosition: (position) => set({ position }),
-	setResumeText: (text) => set({ resumeText: text }),
-	setAnswer: (answerOrUpdater) =>
-		set((state) => ({
-			answer:
-				typeof answerOrUpdater === "function"
-					? answerOrUpdater(state.answer)
-					: answerOrUpdater,
-		})),
+		// ── Review ──────────────────────────────────────────────────────────
+		reviewData: null,
+		streamingReviewText: "",
 
-	// ── Lifecycle ───────────────────────────────────────────────────────
+		// ── Session Config Actions ──────────────────────────────────────────
+		setMode: (mode) => set({ mode }),
+		setInterviewerRole: (role) => set({ interviewerRole: role }),
+		setPosition: (position) => set({ position }),
+		setResumeText: (text) => set({ resumeText: text }),
+		setAnswer: (answerOrUpdater) =>
+			set((state) => ({
+				answer:
+					typeof answerOrUpdater === "function"
+						? answerOrUpdater(state.answer)
+						: answerOrUpdater,
+			})),
 
-	initFromStorage: () => {
-		const ctx = loadSharedContext();
-		const patch: Partial<InterviewState> = {};
-		if (ctx.resumeText) {
-			patch.resumeText = ctx.resumeText;
-			patch.fileStatus = "已从简历诊断 / JD 匹配页自动加载简历内容。";
-		}
-		if (ctx.position) {
-			patch.position = ctx.position;
-		}
-		const actions = loadNextActions();
-		const focus = actions.find((a) => a.type === "interview-focus");
-		if (focus?.context) {
-			patch.focusContext = focus.context;
-		}
-		clearNextActions();
-		if (Object.keys(patch).length > 0) {
-			set(patch);
-		}
-	},
+		// ── Lifecycle ───────────────────────────────────────────────────────
 
-	handleFileChange: async (event) => {
-		const file = event.target.files?.[0];
-		if (!file) return;
-
-		set({ isParsingFile: true, errorMessage: "", fileStatus: `正在解析：${file.name}` });
-
-		try {
-			const result = await parseResumeFile(file);
-			set({ resumeText: result.text, fileStatus: result.message });
-		} catch (error) {
-			set({
-				fileStatus:
-					error instanceof Error
-						? error.message
-						: "文件解析失败，请改为粘贴文本。",
-			});
-		} finally {
-			set({ isParsingFile: false });
-			event.target.value = "";
-		}
-	},
-
-	handlePrepareInterview: async () => {
-		const state = get();
-		if (!selectCanStartInterview(state)) {
-			set({ errorMessage: "请先提供至少 40 字的真实简历内容，再开始面试。" });
-			return;
-		}
-
-		set({ isPreparing: true, errorMessage: "", isCompleted: false });
-
-		try {
-			const data = await requestJson<PlanResponse>({
-				action: "plan",
-				resumeText: state.resumeText,
-				position: state.position,
-				interviewerRole: state.interviewerRole,
-				focusContext: state.focusContext || undefined,
-			});
-
-			if (!data.openingRound || !data.topics || data.topics.length === 0) {
-				throw new Error("真实 AI 没有返回有效追问计划，请重试。");
+		initFromStorage: () => {
+			const ctx = loadSharedContext();
+			const patch: Partial<InterviewState> = {};
+			if (ctx.resumeText) {
+				patch.resumeText = ctx.resumeText;
+				patch.fileStatus = "已从简历诊断 / JD 匹配页自动加载简历内容。";
 			}
+			if (ctx.position) {
+				patch.position = ctx.position;
+			}
+			const actions = loadNextActions();
+			const focus = actions.find((a) => a.type === "interview-focus");
+			if (focus?.context) {
+				patch.focusContext = focus.context;
+			}
+			clearNextActions();
+			if (Object.keys(patch).length > 0) {
+				set(patch);
+			}
+		},
 
-			set({
-				topics: data.topics,
-				rounds: [data.openingRound],
-				currentTopicIndex: findTopicIndexByFocus(
-					data.topics,
-					data.openingRound.focus,
-				),
-				activeQuestion: 0,
-				topicDepth: 0,
-				history: [],
-				answer: "",
-				aiScores: [],
-				reviewData: null,
-				streamingReviewText: "",
-				planSummary:
-					data.summary || "已基于真实简历生成面试追问计划。",
-			});
-		} catch (error) {
-			set({
-				errorMessage:
-					error instanceof Error
-						? error.message
-						: "真实 AI 初始化失败。",
-				topics: [],
-				rounds: [],
-			});
-		} finally {
-			set({ isPreparing: false });
-		}
-	},
+		handleFileChange: async (event) => {
+			const file = event.target.files?.[0];
+			if (!file) return;
 
-	handleAnswerSubmit: async () => {
-		const state = get();
-		if (!selectCanAdvance(state)) return;
+			set({ isParsingFile: true, errorMessage: "", fileStatus: `正在解析：${file.name}` });
 
-		set({ isAdvancing: true, errorMessage: "" });
+			try {
+				const result = await parseResumeFile(file);
+				set({ resumeText: result.text, fileStatus: result.message });
+			} catch (error) {
+				set({
+					fileStatus:
+						error instanceof Error
+							? error.message
+							: "文件解析失败，请改为粘贴文本。",
+				});
+			} finally {
+				set({ isParsingFile: false });
+				event.target.value = "";
+			}
+		},
 
-		try {
-			if (state.mode === "practice") {
-				await advanceToNextRound(get, set);
+		handlePrepareInterview: async () => {
+			const state = get();
+			if (!selectCanStartInterview(state)) {
+				set({ errorMessage: "请先提供至少 40 字的真实简历内容，再开始面试。" });
 				return;
 			}
 
-			await new Promise((resolve) => window.setTimeout(resolve, 650));
-			await advanceToNextRound(get, set);
-		} catch (error) {
-			set({
-				errorMessage:
-					error instanceof Error
-						? error.message
-						: "真实 AI 追问失败。",
-			});
-		} finally {
-			set({ isAdvancing: false });
-		}
-	},
-
-	handleSwitchTopic: () => {
-		const state = get();
-		if (state.isAdvancing || state.isCompleted || state.topics.length === 0)
-			return;
-
-		const nextIndex = state.activeQuestion + 1;
-		const nextTopicIdx = getNextTopicIndex(
-			state.currentTopicIndex,
-			state.topics,
-			state.rounds,
-		);
-		const nextRound = createOpeningRound(state.topics[nextTopicIdx]);
-
-		const newHistory =
-			state.answer.trim().length > 0
-				? [...state.history.slice(0, state.activeQuestion), state.answer]
-				: state.history;
-
-		const newRounds = [...state.rounds];
-		newRounds[nextIndex] = nextRound;
-
-		set({
-			history: newHistory,
-			rounds: newRounds,
-			currentTopicIndex: nextTopicIdx,
-			topicDepth: 0,
-			activeQuestion: nextIndex,
-			answer: "",
-		});
-	},
-
-	handleFinishInterview: async () => {
-		const state = get();
-		if (state.isAdvancing || state.isGeneratingReview) return;
-
-		const finalHistory =
-			state.answer.trim().length > 0 && !state.isCompleted
-				? [
-						...state.history.slice(0, state.activeQuestion),
-						state.answer,
-					]
-				: state.history;
-
-		if (state.answer.trim().length > 0 && !state.isCompleted) {
-			set({ history: finalHistory });
-		}
-
-		set({ isCompleted: true, isGeneratingReview: true, streamingReviewText: "" });
-
-		try {
-			const current = get();
-			const reviewRounds = current.rounds.map((item, index) => ({
-				focus: item.focus,
-				question: item.question,
-				answer:
-					getSavedAnswer(
-						finalHistory,
-						current.activeQuestion,
-						current.answer,
-						index,
-					) || "（未作答）",
-				dimension: item.dimension,
-			}));
-
-			const averageScore = selectAverageScore(current);
-
-			const requestBody = {
-				action: "review",
-				stream: true,
-				resumeText: current.resumeText,
-				position: current.position,
-				mode: current.mode,
-				rounds: reviewRounds,
-				averageScore,
-			};
-
-			let fullText = "";
-			let retries = 0;
-			const maxRetries = 2;
-
-			const readStream = async () => {
-				const streamResponse = await fetchWithAiHeaders(
-					"/api/interview-ai",
-					{
-						method: "POST",
-						body: JSON.stringify(requestBody),
-					},
-				);
-
-				if (!streamResponse.ok) {
-					throw new Error("复盘报告生成失败。");
-				}
-
-				const reader = streamResponse.body?.getReader();
-				const decoder = new TextDecoder();
-
-				if (reader) {
-					while (true) {
-						const { done, value } = await reader.read();
-						if (done) break;
-						const chunk = decoder.decode(value, { stream: true });
-						fullText += chunk;
-						set({ streamingReviewText: fullText });
-					}
-				}
-			};
-
-			while (retries <= maxRetries) {
-				try {
-					await readStream();
-					break;
-				} catch (err) {
-					retries++;
-					if (retries > maxRetries) throw err;
-					const backoff = retries * 1000;
-					set({ streamingReviewText: fullText + `\n\n[网络中断，${backoff / 1000}秒后重试...]` });
-					await new Promise((r) => setTimeout(r, backoff));
-				}
+			if (state.phase !== "idle") {
+				advancePhase("idle");
+			}
+			if (!advancePhase("preparing", { errorMessage: "" })) {
+				return;
 			}
 
-			set({
-				reviewData: {
-					ok: true,
-					overallComment: fullText,
-					strengths: [],
-					weaknesses: [],
-					nextSteps: [],
-					interviewReadiness: "",
-				},
-			});
+			try {
+				const data = await requestJson<PlanResponse>({
+					action: "plan",
+					resumeText: state.resumeText,
+					position: state.position,
+					interviewerRole: state.interviewerRole,
+					focusContext: state.focusContext || undefined,
+				});
 
-			const afterReview = get();
-			const currentScore = selectCurrentScore(afterReview);
-			const reportMarkdown = selectReportMarkdown(afterReview);
+				if (!data.openingRound || !data.topics || data.topics.length === 0) {
+					throw new Error("真实 AI 没有返回有效追问计划，请重试。");
+				}
 
-			saveInterviewRecord({
-				id: `interview-${Date.now()}`,
-				date: new Date().toISOString(),
-				position: afterReview.position,
-				mode: afterReview.mode,
-				averageScore: selectAverageScore(afterReview),
-				roundCount: afterReview.rounds.length,
-				reportMarkdown,
-				reviewSummary: fullText.slice(0, 200),
-				dimensions: {
-					accuracy: currentScore.accuracy,
-					structure: currentScore.structure,
-					depth: currentScore.depth,
-					riskHandling: currentScore.riskHandling,
-					reviewMindset: currentScore.reviewMindset,
-				},
-			});
-
-			if (afterReview.resumeText.trim().length >= 40) {
-				const weaknesses = fullText.match(/短板[：:]\s*(.+?)(?:\n|$)/g) || [];
-				saveResumeVersion({
-					text: afterReview.resumeText,
-					source: "mock-interview",
-					scores: { interviewAvg: selectAverageScore(afterReview) },
-					suggestions: weaknesses.slice(0, 5).map((w) => ({
-						source: "mock-interview" as const,
-						content: w.replace(/短板[：:]\s*/, "").trim(),
-						priority: "medium" as const,
-					})),
+				advancePhase("interviewing", {
+					topics: data.topics,
+					rounds: [data.openingRound],
+					currentTopicIndex: findTopicIndexByFocus(
+						data.topics,
+						data.openingRound.focus,
+					),
+					activeQuestion: 0,
+					topicDepth: 0,
+					history: [],
+					answer: "",
+					aiScores: [],
+					reviewData: null,
+					streamingReviewText: "",
+					planSummary:
+						data.summary || "已基于真实简历生成面试追问计划。",
+				});
+			} catch (error) {
+				advancePhase("idle", {
+					errorMessage:
+						error instanceof Error
+							? error.message
+							: "真实 AI 初始化失败。",
+					topics: [],
+					rounds: [],
 				});
 			}
-		} catch {
-			set({ reviewData: null });
-		} finally {
-			set({ isGeneratingReview: false });
-		}
-	},
+		},
 
-	handleReset: () => {
-		set({
-			isAdvancing: false,
-			isCompleted: false,
-			activeQuestion: 0,
-			currentTopicIndex: 0,
-			topicDepth: 0,
-			answer: "",
-			history: [],
-			rounds: [],
-			topics: [],
-			aiScores: [],
-			reviewData: null,
-			isGeneratingReview: false,
-			streamingReviewText: "",
-			planSummary: "尚未基于简历生成面试计划。",
-			errorMessage: "",
-		});
-	},
-}));
+		handleAnswerSubmit: async () => {
+			const state = get();
+			if (!selectCanAdvance(state)) return;
+
+			if (!advancePhase("advancing", { errorMessage: "" })) return;
+
+			try {
+				await advanceToNextRound(get, set);
+				advancePhase("interviewing");
+			} catch (error) {
+				advancePhase("interviewing", {
+					errorMessage:
+						error instanceof Error
+							? error.message
+							: "真实 AI 追问失败。",
+				});
+			}
+		},
+
+		handleSwitchTopic: () => {
+			const state = get();
+			if (state.phase !== "interviewing" || state.topics.length === 0) return;
+
+			const nextIndex = state.activeQuestion + 1;
+			const nextTopicIdx = getNextTopicIndex(
+				state.currentTopicIndex,
+				state.topics,
+				state.rounds,
+			);
+			const nextRound = createOpeningRound(state.topics[nextTopicIdx]);
+
+			const newHistory =
+				state.answer.trim().length > 0
+					? [...state.history.slice(0, state.activeQuestion), state.answer]
+					: state.history;
+
+			const newRounds = [...state.rounds];
+			newRounds[nextIndex] = nextRound;
+
+			set({
+				history: newHistory,
+				rounds: newRounds,
+				currentTopicIndex: nextTopicIdx,
+				topicDepth: 0,
+				activeQuestion: nextIndex,
+				answer: "",
+			});
+		},
+
+		handleFinishInterview: async () => {
+			const state = get();
+			if (state.phase !== "interviewing") return;
+
+			const finalHistory =
+				state.answer.trim().length > 0
+					? [
+							...state.history.slice(0, state.activeQuestion),
+							state.answer,
+						]
+					: state.history;
+
+			if (state.answer.trim().length > 0) {
+				set({ history: finalHistory });
+			}
+
+			if (!advancePhase("reviewing", { streamingReviewText: "" })) return;
+
+			try {
+				const current = get();
+				const reviewRounds = current.rounds.map((item, index) => ({
+					focus: item.focus,
+					question: item.question,
+					answer:
+						getSavedAnswer(
+							finalHistory,
+							current.activeQuestion,
+							current.answer,
+							index,
+						) || "（未作答）",
+					dimension: item.dimension,
+				}));
+
+				const averageScore = selectAverageScore(current);
+
+				const requestBody = {
+					action: "review",
+					stream: true,
+					resumeText: current.resumeText,
+					position: current.position,
+					mode: current.mode,
+					rounds: reviewRounds,
+					averageScore,
+				};
+
+				let fullText = "";
+				let retries = 0;
+				const maxRetries = 2;
+
+				const readStream = async () => {
+					const streamResponse = await fetchWithAiHeaders(
+						"/api/interview-ai",
+						{
+							method: "POST",
+							body: JSON.stringify(requestBody),
+						},
+					);
+
+					if (!streamResponse.ok) {
+						throw new Error("复盘报告生成失败。");
+					}
+
+					const reader = streamResponse.body?.getReader();
+					const decoder = new TextDecoder();
+
+					if (reader) {
+						while (true) {
+							const { done, value } = await reader.read();
+							if (done) break;
+							const chunk = decoder.decode(value, { stream: true });
+							fullText += chunk;
+							set({ streamingReviewText: fullText });
+						}
+					}
+				};
+
+				while (retries <= maxRetries) {
+					try {
+						await readStream();
+						break;
+					} catch (err) {
+						retries++;
+						if (retries > maxRetries) throw err;
+						const backoff = retries * 1000;
+						set({ streamingReviewText: fullText + `\n\n[网络中断，${backoff / 1000}秒后重试...]` });
+						await new Promise((r) => setTimeout(r, backoff));
+					}
+				}
+
+				set({
+					reviewData: {
+						ok: true,
+						overallComment: fullText,
+						strengths: [],
+						weaknesses: [],
+						nextSteps: [],
+						interviewReadiness: "",
+					},
+				});
+
+				const afterReview = get();
+				const currentScore = selectCurrentScore(afterReview);
+				const reportMarkdown = selectReportMarkdown(afterReview);
+
+				saveInterviewRecord({
+					id: `interview-${Date.now()}`,
+					date: new Date().toISOString(),
+					position: afterReview.position,
+					mode: afterReview.mode,
+					averageScore: selectAverageScore(afterReview),
+					roundCount: afterReview.rounds.length,
+					reportMarkdown,
+					reviewSummary: fullText.slice(0, 200),
+					dimensions: {
+						accuracy: currentScore.accuracy,
+						structure: currentScore.structure,
+						depth: currentScore.depth,
+						riskHandling: currentScore.riskHandling,
+						reviewMindset: currentScore.reviewMindset,
+					},
+				});
+
+				if (afterReview.resumeText.trim().length >= 40) {
+					saveResumeVersion({
+						text: afterReview.resumeText,
+						source: "mock-interview",
+						scores: { interviewAvg: selectAverageScore(afterReview) },
+						suggestions: extractWeaknesses(fullText).map((w) => ({
+							source: "mock-interview" as const,
+							content: w,
+							priority: "medium" as const,
+						})),
+					});
+				}
+			} catch {
+				set({ reviewData: null });
+			} finally {
+				advancePhase("completed");
+			}
+		},
+
+		handleReset: () => {
+			advancePhase("idle", {
+				activeQuestion: 0,
+				currentTopicIndex: 0,
+				topicDepth: 0,
+				answer: "",
+				history: [],
+				rounds: [],
+				topics: [],
+				aiScores: [],
+				reviewData: null,
+				streamingReviewText: "",
+				planSummary: "尚未基于简历生成面试计划。",
+				errorMessage: "",
+			});
+		},
+	};
+});
 
 // ---------------------------------------------------------------------------
 // Internal: advance logic (needs get/set)
 // ---------------------------------------------------------------------------
+
+/**
+ * 从流式复盘报告文本中结构化提取短板/不足条目。
+ *
+ * 解析策略（按优先级）：
+ *   1. 定位"短板"段落标题，提取该段下的列表项（- 或 • 开头）
+ *   2. 若无列表项，提取段落标题到下一段标题之间的完整句子
+ *   3. 最多返回 5 条，每条截断到 120 字
+ */
+function extractWeaknesses(text: string): string[] {
+	const sectionHeaders = [
+		/短板/,
+		/不足/,
+		/待改进/,
+		/薄弱/,
+		/需要提升/,
+		/问题/,
+	];
+
+	const lines = text.split("\n");
+	let inSection = false;
+	const items: string[] = [];
+
+	for (const line of lines) {
+		const trimmed = line.trim();
+
+		if (sectionHeaders.some((h) => h.test(trimmed)) && /^[#*\-•]|[：:]/.test(trimmed)) {
+			inSection = true;
+			continue;
+		}
+
+		if (inSection) {
+			if (/^[#*]{1,3}\s/.test(trimmed) || /^(强项|优势|下一步|推荐|总体|学习方向)/.test(trimmed)) {
+				inSection = false;
+				continue;
+			}
+
+			const content = trimmed
+				.replace(/^[-•*]\s*/, "")
+				.replace(/^\d+[.、]\s*/, "");
+
+			if (content.length >= 8) {
+				items.push(content.slice(0, 120));
+			}
+		}
+	}
+
+	if (items.length > 0) {
+		return items.slice(0, 5);
+	}
+
+	const fallbackPattern = /(?:短板|不足|薄弱|待改进)[：:]\s*(.+?)(?:[。；\n]|$)/g;
+	const fallbackItems: string[] = [];
+	let match;
+	while ((match = fallbackPattern.exec(text)) !== null) {
+		const content = match[1].trim();
+		if (content.length >= 8) {
+			fallbackItems.push(content.slice(0, 120));
+		}
+	}
+
+	return fallbackItems.slice(0, 5);
+}
 
 async function advanceToNextRound(
 	get: () => InterviewStore,

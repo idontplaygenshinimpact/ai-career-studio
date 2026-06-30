@@ -1,16 +1,13 @@
 "use client";
 
 import { memo } from "react";
-import type { InterviewMode } from "@/stores/interview-store";
+import { isInPhase, type InterviewMode, type InterviewPhase } from "@/stores/interview-store";
 
 type StageStatus = "waiting" | "active" | "done" | "error";
 
 type InterviewStagePanelProps = {
 	mode: InterviewMode;
-	isPreparing: boolean;
-	isAdvancing: boolean;
-	isGeneratingReview: boolean;
-	isCompleted: boolean;
+	phase: InterviewPhase;
 	hasRound: boolean;
 	hasError: boolean;
 	topicsCount: number;
@@ -45,10 +42,7 @@ function stageDotClass(status: StageStatus) {
 
 export const InterviewStagePanel = memo(function InterviewStagePanel({
 	mode,
-	isPreparing,
-	isAdvancing,
-	isGeneratingReview,
-	isCompleted,
+	phase,
 	hasRound,
 	hasError,
 	topicsCount,
@@ -59,6 +53,11 @@ export const InterviewStagePanel = memo(function InterviewStagePanel({
 	generatedFundamentalCount,
 	hasCodingPrompt,
 }: InterviewStagePanelProps) {
+	const isPreparing = phase === "preparing";
+	const isAdvancing = phase === "advancing";
+	const isGeneratingReview = phase === "reviewing";
+	const isCompleted = isInPhase(phase, "reviewing", "completed");
+
 	const planningStatus: StageStatus = hasError && !hasRound
 		? "error"
 		: isPreparing

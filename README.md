@@ -93,10 +93,10 @@
 跨模块简历版本追踪与综合复盘。
 
 - **自动版本化**：在 JD 匹配、简历诊断、项目优化、模拟面试中提交材料后自动保存版本快照
-- **多简历线识别**：通过前 200 字指纹 hash + 60% 相似度比对，自动将不同简历归入独立版本线
+- **多简历线识别**：通过前 200 字 FNV-1a 32-bit hash 快速匹配 + Levenshtein 编辑距离归一化相似度（≥60%）兜底，自动将不同简历归入独立版本线
 - **版本对比**：基于 LCS（最长公共子序列）算法的行级 diff，高亮新增/删除行和分数变化
 - **建议聚合**：从三个模块的 AI 输出中提取改进建议，按出现频率去重排序，高频建议自动标记高优
-- **综合复盘**：纯规则引擎交叉简历诊断分、面试均分、手写通过率三维度，输出投递准备度和优先级排序的下一步建议
+- **综合复盘**：基于 Production Rule System（FactBase + 规则注册 + 按优先级遍历评估）交叉简历诊断分、面试均分、手写通过率三维度，输出投递准备度和优先级排序的下一步建议
 - **版本管理**：支持查看简历全文、双版本对比、双击编辑标签、删除版本
 - **空状态引导**：无版本时提示用户去其他模块使用简历
 
@@ -111,7 +111,7 @@
 - **PWA 支持**：manifest.json + 分层 Service Worker 缓存（API 不缓存、Next 静态资源 cache-first、页面 network-first）+ SVG 图标，支持安装到桌面和离线访问
 - **错误边界**：全局 error.tsx（带重试按钮）+ 每个页面独立的骨架屏 loading
 - **无障碍**：导航栏 aria-label、设置面板 role="dialog"、语音按钮 aria-label
-- **API 频率限制**：所有 AI 接口 30 次/分钟 IP 限制，防止滥用
+- **API 频率限制**：所有 AI 接口基于 Sliding Window Log + LRU 淘汰（1024 IP 上限）做 30 次/分钟频率控制（单实例内存方案，分布式需 Redis）
 
 ## 技术栈
 
@@ -216,14 +216,14 @@ src/
 │   ├── ai-client.ts                  # 共享 AI 请求工具（非流式 + 流式 + debug 元数据）
 │   ├── ai-config-header.ts           # 从请求 header 提取用户 AI 配置
 │   ├── fetch-ai.ts                   # 前端 AI 请求封装（取消/超时/重试/错误分类 + 自动注入 Key）
-│   ├── rate-limit.ts                 # IP 频率限制（内存 Map，30 次/分钟）
+│   ├── rate-limit.ts                 # IP 频率限制（Sliding Window Log + LRU 淘汰，30 次/分钟）
 │   ├── storage.ts                    # localStorage 工具（AI 设置/面试历史/跨页面上下文/引导动作）
 │   ├── export.ts                     # 导出工具（下载 Markdown / 复制到剪贴板）
 │   ├── interview-core.ts             # 面试核心类型、评分函数、基础题库（fallback）
 │   ├── analysis.ts                   # 本地分析函数（AI 不可用时的 fallback）
 │   ├── resume-file.ts                # 浏览器端简历文件解析（txt/md/json/docx/文本型 pdf）
 │   ├── resume-versions.ts           # 简历版本管理（指纹归类 + LCS diff + 建议聚合）
-│   ├── comprehensive-advice.ts      # 综合复盘引擎（规则引擎，交叉三维度）
+│   ├── comprehensive-advice.ts      # 综合复盘引擎（Production Rule System，FactBase + 规则注册 + 遍历评估）
 │   └── __tests__/                    # 单元测试
 │       ├── interview-core.test.ts
 │       ├── resume-file.test.ts
@@ -278,10 +278,10 @@ plan API 让 AI 根据目标岗位（`position`）同时生成简历追问点和
 **6. 简历版本管理与综合复盘**
 
 - **自动版本化**：用户在 JD 匹配、简历诊断、项目优化、模拟面试中提交材料时，自动保存版本快照并关联当次 AI 分析结果（评分 + 改进建议）
-- **多简历线归类**：通过前 200 字指纹 hash 快速匹配 + 逐字符位置相似度（≥60%）兜底，自动将不同简历归入独立版本线
+- **多简历线归类**：通过前 200 字 FNV-1a 32-bit hash 快速匹配 + Levenshtein 编辑距离归一化相似度（Wagner-Fischer DP + 滚动数组，≥60%）兜底，自动将不同简历归入独立版本线
 - **版本去重**：相同文本 + 相同来源不创建新版本，只更新评分和建议
 - **LCS 行级对比**：使用最长公共子序列动态规划算法比对两个版本的简历文本，正确处理重复行和行位移
-- **综合复盘引擎**：纯规则引擎，交叉简历诊断分、面试均分、手写通过率三维度，输出投递准备度（可以投递/基本准备好/需要继续打磨/建议先集中训练）和优先级排序的下一步建议
+- **综合复盘引擎**：基于 Production Rule System（FactBase 收集 → ReadinessRule/ActionRule 注册 → 按优先级遍历评估），交叉简历诊断分、面试均分、手写通过率三维度，输出投递准备度（可以投递/基本准备好/需要继续打磨/建议先集中训练）和优先级排序的下一步建议
 
 **7. 状态管理与面试状态机**
 
@@ -316,11 +316,11 @@ plan API 让 AI 根据目标岗位（`position`）同时生成简历追问点和
 - **复杂状态流**：用 Zustand + selector 管理多阶段面试状态机，用 `useCodingWorkbench` 管理轻量 IDE 全部状态，把业务逻辑从 UI 壳中彻底分离。
 - **统一 AI 请求控制**：`useAiRequest` Hook 统一管理 JD 匹配、简历诊断、项目优化、代码审查等 AI 请求状态（loading / error / status / cancel / retry），避免每个页面重复实现请求逻辑；`fetchWithAiHeaders` 覆盖用户 Key 注入、429/5xx 重试、超时和外部取消。
 - **组件工程化**：手写练习页从 700+ 行单文件拆为 `useCodingWorkbench` hook + 7 个 `memo` 子组件 + 3 个工具模块，主组件只做 UI 组装。
-- **性能优化**：CodeMirror 通过 `DynamicCodeEditor` 动态加载（`next/dynamic + ssr: false`），模拟面试页首屏从约 313 kB 降到约 149 kB（-53%）。
+- **性能优化**：CodeMirror 通过 `DynamicCodeEditor` 动态加载（`next/dynamic + ssr: false`），模拟面试页 First Load JS 约 149 kB（较直接打包编辑器依赖估算减少约 50%）。
 - **复杂交互**：支持语音输入、SSE 流式复盘、代码编辑器作答、手写题自动识别、自定义测试、快照恢复、提交记录和运行测试，覆盖表单、流、Worker、编辑器、本地持久化等多类前端交互。
 - **训练数据看板**：SVG 五维能力雷达图 + 手写题通过趋势 + 7 项训练指标（含简历版本数），形成「训练 → 反馈 → 再训练」闭环。
-- **简历版本管理**：前 200 字指纹 hash + 相似度比对自动归类多简历线，LCS 动态规划行级 diff，跨模块自动保存版本并关联评分和建议。
-- **综合复盘引擎**：纯规则引擎交叉简历/面试/手写三维度，区分"未评估"和"评估为低分"，输出投递准备度和优先级建议。
+- **简历版本管理**：FNV-1a 32-bit hash + Levenshtein 编辑距离归一化相似度自动归类多简历线，LCS 动态规划行级 diff，跨模块自动保存版本并关联评分和建议。
+- **综合复盘引擎**：Production Rule System 交叉简历/面试/手写三维度，区分"未评估"和"评估为低分"，输出投递准备度和优先级建议。
 - **稳定性设计**：AI 请求走 API Route 代理，结合用户自带 Key、AbortController 取消、超时、重试、错误分类、Zod 校验、IP 频率限制、本地 fallback 和模型 JSON normalize，避免前端直接裸调模型。
 
 ## 本地运行
@@ -368,7 +368,7 @@ AI_MODEL=gpt-4o-mini
 | `/api/project-polish` | 项目优化 | 降级为本地模板改写 |
 | `/api/interview-ai` | 模拟面试（plan/round/review） | 返回 503 错误 |
 
-所有 AI 接口均有 IP 频率限制（30 次/分钟）。
+所有 AI 接口均有 Sliding Window Log 频率限制（30 次/分钟，单实例内存方案）。
 
 ## 简历文件支持
 

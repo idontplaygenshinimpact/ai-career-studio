@@ -16,6 +16,7 @@ import {
 	selectFundamentalCount,
 	selectGeneratedFundamentalCount,
 	selectReportMarkdown,
+	isInPhase,
 	type InterviewMode,
 	type InterviewStore,
 } from "@/stores/interview-store";
@@ -68,15 +69,12 @@ export function InterviewTrainer() {
 		resumeText,
 		fileStatus,
 		isParsingFile,
-		isPreparing,
+		phase,
 		topics,
 		topicDepth,
 		answer,
 		rounds,
-		isAdvancing,
-		isCompleted,
 		errorMessage,
-		isGeneratingReview,
 		streamingReviewText,
 		reviewData,
 		activeQuestion,
@@ -88,21 +86,23 @@ export function InterviewTrainer() {
 			resumeText: s.resumeText,
 			fileStatus: s.fileStatus,
 			isParsingFile: s.isParsingFile,
-			isPreparing: s.isPreparing,
+			phase: s.phase,
 			planSummary: s.planSummary,
 			topics: s.topics,
 			topicDepth: s.topicDepth,
 			answer: s.answer,
 			rounds: s.rounds,
-			isAdvancing: s.isAdvancing,
-			isCompleted: s.isCompleted,
 			errorMessage: s.errorMessage,
-			isGeneratingReview: s.isGeneratingReview,
 			streamingReviewText: s.streamingReviewText,
 			reviewData: s.reviewData,
 			activeQuestion: s.activeQuestion,
 		})),
 	);
+
+	const isPreparing = phase === "preparing";
+	const isAdvancing = phase === "advancing";
+	const isGeneratingReview = phase === "reviewing";
+	const isCompleted = isInPhase(phase, "reviewing", "completed");
 
 	const round = useInterviewStore(selectRound);
 	const latestAiScore = useInterviewStore(selectLatestAiScore);
@@ -119,12 +119,13 @@ export function InterviewTrainer() {
 			aiScores: s.aiScores,
 			answer: s.answer,
 			history: s.history,
-			isCompleted: s.isCompleted,
+			phase: s.phase,
 			activeQuestion: s.activeQuestion,
 			rounds: s.rounds,
 			mode: s.mode,
 			position: s.position,
 			topicDepth: s.topicDepth,
+			planSummary: s.planSummary,
 		})),
 	);
 
@@ -528,10 +529,7 @@ export function InterviewTrainer() {
 			<aside className="space-y-5">
 				<InterviewStagePanel
 					mode={mode}
-					isPreparing={isPreparing}
-					isAdvancing={isAdvancing}
-					isGeneratingReview={isGeneratingReview}
-					isCompleted={isCompleted}
+					phase={phase}
 					hasRound={Boolean(round)}
 					hasError={Boolean(errorMessage)}
 					topicsCount={topics.length}

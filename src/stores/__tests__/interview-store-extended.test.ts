@@ -18,7 +18,7 @@ function createBaseState(): InterviewStore {
 		fileStatus: "",
 		isParsingFile: false,
 		focusContext: "",
-		isPreparing: false,
+		phase: "idle",
 		planSummary: "尚未基于简历生成面试计划。",
 		topics: [],
 		activeQuestion: 0,
@@ -27,12 +27,9 @@ function createBaseState(): InterviewStore {
 		answer: "",
 		history: [],
 		rounds: [],
-		isAdvancing: false,
-		isCompleted: false,
 		errorMessage: "",
 		aiScores: [],
 		reviewData: null,
-		isGeneratingReview: false,
 		streamingReviewText: "",
 		setMode: () => {},
 		setInterviewerRole: () => {},
@@ -91,13 +88,13 @@ describe("selectCanStartInterview edge cases", () => {
 describe("selectCanAdvance edge cases", () => {
 	it("returns false when isAdvancing", () => {
 		const round = createOpeningRound(frontendFundamentalTopics[0]);
-		const state = { ...createBaseState(), rounds: [round], answer: "yes", isAdvancing: true };
+		const state = { ...createBaseState(), rounds: [round], answer: "yes", phase: "advancing" as const };
 		expect(selectCanAdvance(state)).toBe(false);
 	});
 
 	it("returns false when answer is only whitespace", () => {
 		const round = createOpeningRound(frontendFundamentalTopics[0]);
-		const state = { ...createBaseState(), rounds: [round], answer: "   \n\t  " };
+		const state = { ...createBaseState(), rounds: [round], answer: "   \n\t  ", phase: "interviewing" as const };
 		expect(selectCanAdvance(state)).toBe(false);
 	});
 });
@@ -114,7 +111,7 @@ describe("selectAverageScore edge cases", () => {
 		const state = {
 			...createBaseState(),
 			history: ["short", "a detailed answer with architecture and performance optimization and error handling"],
-			isCompleted: true,
+			phase: "completed" as const,
 		};
 		const avg = selectAverageScore(state);
 		expect(avg).toBeGreaterThan(0);
