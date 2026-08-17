@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { loadAiSettings, saveAiSettings, type UserAiSettings } from "@/lib/storage";
 
 export function AiSettingsPanel() {
@@ -44,9 +45,10 @@ export function AiSettingsPanel() {
 				{hasKey ? "AI 已配置" : "设置 API Key"}
 			</button>
 
-			{isOpen ? (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-					<div role="dialog" aria-label="AI 配置" className="mx-4 w-full max-w-lg rounded-[28px] border border-white/10 bg-slate-950 p-6 shadow-[0_24px_90px_rgba(0,0,0,0.5)]">
+			{isOpen
+				? createPortal(
+						<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+						<div role="dialog" aria-label="AI 配置" className="mx-4 w-full max-w-lg rounded-[28px] border border-white/10 bg-slate-950 p-6 shadow-[0_24px_90px_rgba(0,0,0,0.5)]">
 						<div className="flex items-center justify-between">
 							<h2 className="text-lg font-semibold text-white">AI 配置</h2>
 							<button
@@ -129,8 +131,10 @@ export function AiSettingsPanel() {
 							Key 仅存储在你的浏览器 localStorage 中，通过 HTTPS 请求 header 传递给服务端，不会被持久化到服务器。
 						</p>
 					</div>
-				</div>
-			) : null}
+					</div>,
+						document.body,
+					)
+				: null}
 		</>
 	);
 }
