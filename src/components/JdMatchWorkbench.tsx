@@ -39,7 +39,7 @@ export function JdMatchWorkbench() {
 
     const response = await ai.run("/api/jd-match", {
       method: "POST",
-      timeoutMs: 30_000,
+      timeoutMs: 60_000,
       retries: 1,
       status: "AI 匹配分析中...",
       body: JSON.stringify({ jd, resume }),

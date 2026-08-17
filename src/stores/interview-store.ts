@@ -304,10 +304,14 @@ export function getSavedAnswer(
 	);
 }
 
-async function requestJson<T>(payload: Record<string, unknown>): Promise<T> {
+async function requestJson<T>(
+	payload: Record<string, unknown>,
+	timeoutMs?: number,
+): Promise<T> {
 	const response = await fetchWithAiHeaders("/api/interview-ai", {
 		method: "POST",
 		body: JSON.stringify(payload),
+		timeoutMs,
 	});
 	const data = (await response.json()) as T & { error?: string };
 	if (!response.ok) {
@@ -561,7 +565,7 @@ export const useInterviewStore = create<InterviewStore>()((set, get) => {
 					position: state.position,
 					interviewerRole: state.interviewerRole,
 					focusContext: state.focusContext || undefined,
-				});
+				}, 90_000);
 
 				if (!data.openingRound || !data.topics || data.topics.length === 0) {
 					throw new Error("真实 AI 没有返回有效追问计划，请重试。");
@@ -700,6 +704,7 @@ export const useInterviewStore = create<InterviewStore>()((set, get) => {
 						{
 							method: "POST",
 							body: JSON.stringify(requestBody),
+							timeoutMs: 180_000,
 						},
 					);
 
@@ -951,7 +956,7 @@ async function advanceToNextRound(
 			.map((item) => item.focus),
 		nextTopic,
 		history: answeredHistory,
-	});
+	}, 90_000);
 
 	if (!next.round) {
 		throw new Error(next.error || "真实 AI 没有返回下一轮追问。");

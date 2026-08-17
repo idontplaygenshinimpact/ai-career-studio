@@ -107,6 +107,8 @@ export async function requestChatCompletion(
 	}
 
 	const startTime = Date.now();
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), 120_000);
 	const response = await fetch(
 		`${config.baseUrl.replace(/\/$/, "")}/chat/completions`,
 		{
@@ -120,8 +122,9 @@ export async function requestChatCompletion(
 				temperature: 0.35,
 				messages,
 			}),
+			signal: controller.signal,
 		},
-	);
+	).finally(() => clearTimeout(timeoutId));
 	const latencyMs = Date.now() - startTime;
 
 	if (!response.ok) {
@@ -159,6 +162,8 @@ export async function requestChatStream(
 		throw new Error("未配置 AI API Key，无法调用流式 AI 服务。");
 	}
 
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), 120_000);
 	const response = await fetch(
 		`${config.baseUrl.replace(/\/$/, "")}/chat/completions`,
 		{
@@ -173,8 +178,9 @@ export async function requestChatStream(
 				stream: true,
 				messages,
 			}),
+			signal: controller.signal,
 		},
-	);
+	).finally(() => clearTimeout(timeoutId));
 
 	if (!response.ok) {
 		const detail = await response.text().catch(() => "");

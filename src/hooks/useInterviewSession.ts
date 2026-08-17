@@ -213,6 +213,7 @@ export function useInterviewSession() {
 		const response = await fetchWithAiHeaders("/api/interview-ai", {
 			method: "POST",
 			body: JSON.stringify(payload),
+			timeoutMs: 90_000,
 		});
 
 		const data = (await response.json()) as T & { error?: string };
@@ -481,6 +482,7 @@ export function useInterviewSession() {
 					rounds: reviewRounds,
 					averageScore,
 				}),
+				timeoutMs: 180_000,
 			});
 
 			if (!streamResponse.ok) {

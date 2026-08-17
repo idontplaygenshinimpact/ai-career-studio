@@ -71,7 +71,7 @@ export async function fetchWithAiHeaders(
 ): Promise<Response> {
 	const settings = loadAiSettings();
 	const headers = new Headers(init?.headers);
-	const timeoutMs = init?.timeoutMs ?? 25_000;
+	const timeoutMs = init?.timeoutMs ?? 60_000;
 	const retries = init?.retries ?? 0;
 	const retryDelayMs = init?.retryDelayMs ?? 700;
 

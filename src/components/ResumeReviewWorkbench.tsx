@@ -67,7 +67,7 @@ export function ResumeReviewWorkbench() {
 
     const response = await ai.run("/api/resume-review", {
       method: "POST",
-      timeoutMs: 30_000,
+      timeoutMs: 60_000,
       retries: 1,
       status: "AI 诊断中...",
       body: JSON.stringify({ resume }),

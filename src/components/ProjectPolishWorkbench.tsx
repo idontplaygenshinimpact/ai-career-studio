@@ -30,7 +30,7 @@ export function ProjectPolishWorkbench() {
 
     const response = await ai.run("/api/project-polish", {
       method: "POST",
-      timeoutMs: 30_000,
+      timeoutMs: 60_000,
       retries: 1,
       status: "AI 优化中...",
       body: JSON.stringify({ project }),
