@@ -1,5 +1,10 @@
 # CareerPilot / AI Career Studio
 
+[![CI](https://github.com/idontplaygenshinimpact/ai-career-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/idontplaygenshinimpact/ai-career-studio/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+仓库：[GitHub](https://github.com/idontplaygenshinimpact/ai-career-studio) · [Gitee](https://gitee.com/wyyai/ai-career)
+
 面向前端实习 / 校招场景的 AI 能力训练系统。覆盖 JD 匹配、简历诊断、项目经历优化、多轮模拟面试追问、手写题练习和简历版本追踪，所有分析均由真实 AI 驱动，输出结构化评分、风险点、追问链和复盘报告。
 
 项目重点不是做普通 Chatbot 或 AI 表单集合，而是把前端校招准备拆成**诊断 → 训练 → 追问 → 复盘 → 版本迭代**的结构化任务流，并通过**智能引导**在模块之间形成训练闭环。
@@ -244,6 +249,7 @@ e2e/
 ├── navigation.spec.ts                # Playwright E2E 测试（页面导航 + 表单）
 ├── core-flows.spec.ts                # 核心流程测试（简历诊断 + 手写练习 + 面试结构）
 ├── ide-and-dashboard.spec.ts         # 轻量 IDE + 看板 + 负向路径测试
+├── enhanced-coverage.spec.ts         # 增强覆盖：项目优化闭环 + 面试状态机 + 错误边界 + 移动端响应式
 └── resume-versions.spec.ts           # 简历版本管理页测试
 ```
 
@@ -325,6 +331,8 @@ plan API 让 AI 根据目标岗位（`position`）同时生成简历追问点和
 
 ## 本地运行
 
+要求 Node.js ≥ 22.13（`pdfjs-dist` / `lint-staged` 等依赖的 engine 要求，CI 亦使用 Node 22）。
+
 ```bash
 npm install
 npm run dev
@@ -395,4 +403,8 @@ PWA 支持：部署后用户可在手机浏览器中"添加到主屏幕"，支�
 
 ## 可写入简历的项目描述
 
-> CareerPilot / AI Career Studio：基于 Next.js 15 + TypeScript 搭建面向前端校招的 AI 能力训练系统，覆盖 JD 匹配、简历诊断、项目优化、多轮模拟面试、手写题练习和简历版本管理七大模块，形成「诊断 - 训练 - 复盘 - 迭代」闭环；设计 `plan / round / review` 三阶段 AI 面试协议和五阶段状态机，通过 Zustand selector 管理面试状态，通过 `useCodingWorkbench` 管理轻量 IDE 状态；实现项目优化结果保存为简历版本并带追问点进入模拟面试，实现简历版本自动归类（前 200 字指纹 hash + 相似度比对）、LCS 行级 diff 和纯规则引擎综合复盘（交叉简历/面试/手写三维度输出投递准备度）；将手写练习页从 700+ 行单文件拆为 hook + 7 个 memo 子组件，对 CodeMirror 做动态加载（面试页首屏约 149 kB，较直接打包编辑器依赖估算减少约 53%）；封装 `useAiRequest` / `fetchWithAiHeaders` 统一 AI 请求的用户 Key 注入、取消、超时、429/5xx 重试和错误分类，并对自定义 AI Base URL 做 HTTPS / 内网地址校验以降低 SSRF 风险；实现分层 Service Worker 缓存和 Vercel Speed Insights 性能监控；vitest 162 个单测 + Playwright 59 个 E2E（含负向路径和错误边界），husky 提交前自动 lint + type-check。
+> CareerPilot / AI Career Studio：基于 Next.js 15 + TypeScript 搭建面向前端校招的 AI 能力训练系统，覆盖 JD 匹配、简历诊断、项目优化、多轮模拟面试、手写题练习和简历版本管理七大模块，形成「诊断 - 训练 - 复盘 - 迭代」闭环；设计 `plan / round / review` 三阶段 AI 面试协议和五阶段状态机，通过 Zustand selector 管理面试状态，通过 `useCodingWorkbench` 管理轻量 IDE 状态；实现项目优化结果保存为简历版本并带追问点进入模拟面试，实现简历版本自动归类（前 200 字指纹 hash + 相似度比对）、LCS 行级 diff 和纯规则引擎综合复盘（交叉简历/面试/手写三维度输出投递准备度）；将手写练习页从 700+ 行单文件拆为 hook + 7 个 memo 子组件，对 CodeMirror 做动态加载（面试页首屏约 149 kB，较直接打包编辑器依赖估算减少约 53%）；封装 `useAiRequest` / `fetchWithAiHeaders` 统一 AI 请求的用户 Key 注入、取消、超时、429/5xx 重试和错误分类，并对自定义 AI Base URL 做 HTTPS / 内网地址校验以降低 SSRF 风险；实现分层 Service Worker 缓存和 Vercel Speed Insights 性能监控；vitest 162 个单测 + Playwright 59 个 E2E（含负向路径和错误边界），GitHub Actions CI 自动执行 lint + type-check + 单元测试，husky 提交前自动 lint + type-check。
+
+## License
+
+[MIT](LICENSE) © idontplaygenshinimpact
